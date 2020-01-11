@@ -1,0 +1,16 @@
+.Tag:before {
+  content: '#';
+}
+
+.Tag-selected {
+  background-color: lightpink;
+}
+
+.Article {
+  transition: 0.2s;
+}
+
+.hidden {
+  opacity: 0.1;
+  transition: 0.2s;
+}

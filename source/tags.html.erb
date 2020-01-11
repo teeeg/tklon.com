@@ -1,0 +1,20 @@
+---
+title: posts
+layout: layouts/default
+---
+<%= partial "partials/banner" %>
+<p>
+  Filter by tag:
+  <% blog.tags.each_key do |tag| %>
+    <%= partial('partials/tag', :locals => { :tag => tag })%> 
+  <% end %>
+</p>
+
+<% page_articles.each_with_index do |article, i| %>
+  <div class="Article <%= article.tags.join(' ') %>">
+    <%= link_to article.title, article %>
+    <%= article.tags %>
+  </div>
+<% end %>
+
+<%= javascript_include_tag  :tags %>

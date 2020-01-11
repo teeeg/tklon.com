@@ -1,0 +1,62 @@
+@charset "utf-8";
+@import "normalize";
+@import "tag";
+@import "media";
+
+html {
+  font-size: 1rem;
+  font-family: sans-serif;
+  color: rgba(0, 0, 0, 0.9);
+  font-weight: lighter;
+  line-height: 1.4;
+}
+
+body {
+  margin: 0 auto;
+  max-width: 42rem;
+  padding: 1rem;
+}
+
+h1, h2, h3, h4, h5 {
+  & > span {
+    font-size: 0.5em;
+  }
+}
+
+section:after {
+  content: '⦿';
+  display: block;
+  text-align: center;
+  padding-top: 20px;
+}
+
+header {
+  h1, h2, h3, h4, h5 {
+    margin-bottom: 0;
+  }
+  & p {
+    margin-top: 0;
+    text-indent: 1rem;
+  }
+}
+img {
+  max-width: 100%;
+}
+
+footer {
+  text-align: center;
+}
+
+blockquote {
+  & > p:not(:last-child) {
+    display: inline;
+    &:before, &:after {
+      content: '"'
+    }
+  }
+  // quote annotation  
+  & > p:last-child:not(:first-child) {
+    text-align: right;
+  }
+}
+
