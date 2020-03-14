@@ -3,10 +3,13 @@
   "version": "1.0.0",
   "dependencies": {
     "@types/query-string": "^3.0.31",
-    "awesome-typescript-loader": "^3.0.4-rc.0",
-    "browserify": "^14.0.0",
     "query-string": "^4.3.1",
-    "typescript": "^2.1.6",
-    "webpack": "^2.2.1"
+    "ts-loader": "^6.2.1",
+    "typescript": "^2.9.2",
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
+  },
+  "scripts": {
+    "build": "webpack --mode=production"
   }
 }

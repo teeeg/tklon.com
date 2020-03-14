@@ -1,21 +1,25 @@
+const path = require('path');
+
 module.exports = {
     entry: {
         tags: "./source/typescripts/tags.ts"
     },
-    output: {
-        filename: "[name].js",
-        path: __dirname + "/.tmp/javascripts/"
+    module: {
+        rules: [
+            {
+                test: /\.ts$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+        ],
     },
 
     resolve: {
-        // Add '.ts' and '.tsx' as resolvable extensions.
         extensions: [".ts", ".js"]
     },
 
-    module: {
-        loaders: [
-            // All files with a '.ts' extension will be handled by 'awesome-typescript-loader'.
-            { test: /\.ts$/, loader: "awesome-typescript-loader" }
-        ]
-    }
+    output: {
+        filename: '[name].js',
+        path: path.resolve(__dirname, '.tmp/javascripts/'),
+    },
 };

@@ -79,7 +79,7 @@ function forEach(
   someCollection: HTMLCollectionOf<any> | NodeListOf<any>,
   f: Function
 ) {
-  for (var index = 0; index < someCollection.length; index++) {
+  for (let index = 0; index < someCollection.length; index++) {
     f(someCollection[index], index);
   }
 }
