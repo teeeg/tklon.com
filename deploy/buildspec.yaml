@@ -1,0 +1,19 @@
+version: 0.2
+phases:
+  install:
+    commands:
+      - apt-get update
+      - apt-get install nodejs -y
+      - gem install bundler
+      - gem install middleman
+  pre_build:
+    commands:
+      - bundle install
+      - npm install
+  build:
+    commands:
+      - middleman build
+  post_build:
+    commands:
+        - aws s3 sync build/ s3://$S3_BUCKET --acl=public-read --delete
+        - aws cloudfront create-invalidation --distribution-id $CLOUDFRONT_DISTRIBUTION_ID --paths "/*"

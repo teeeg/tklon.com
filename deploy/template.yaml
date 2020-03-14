@@ -1,0 +1,295 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: AWS::Serverless-2016-10-31
+Description: Creates static web page with a Cloudfront CDN, domain aliases, custom SSL certificate, and CI pipeline.
+
+Parameters:
+  AcmCertificateArn:
+    AllowedPattern: "arn:aws:acm:.*"
+    Default: arn:aws:acm:us-east-1:295005258746:certificate/2f702844-d6e5-4573-8a41-57fcc0c1992b
+    Description: The AWS Certificate Manager certificate ARN associated with your top-level domain and www subdomain
+    Type: String
+  Route53HostZoneName:
+    Default: tklon.com
+    Description: The Route 53 hosted zone name where DNS records will be created
+    Type: String
+
+Resources:
+  WebsiteStaticAssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Route53HostZoneName}-assets
+
+  WebsiteStaticAssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref WebsiteStaticAssetsBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:GetObject"
+            Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt CloudfrontOriginAccessIdentity.S3CanonicalUserId
+            Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/*"
+
+  CloudfrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "CloudFront OAI for ${Route53HostZoneName}"
+
+  CloudfrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - !Ref Route53HostZoneName
+          - !Sub www.${Route53HostZoneName}
+        DefaultRootObject: index.html
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponsePagePath: "/404.html"
+            ResponseCode: 404
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - DomainName: !GetAtt WebsiteStaticAssetsBucket.DomainName
+            Id: !Ref WebsiteStaticAssetsBucket
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudfrontOriginAccessIdentity}"
+        PriceClass: PriceClass_100
+        DefaultCacheBehavior:
+          Compress: true
+          ForwardedValues:
+            QueryString: true
+          TargetOriginId: !Ref WebsiteStaticAssetsBucket
+          ViewerProtocolPolicy: redirect-to-https
+          LambdaFunctionAssociations:
+            - EventType: viewer-request
+              LambdaFunctionARN: !GetAtt LambdaCloudfrontPathRewriteFunctionVersion.FunctionArn
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.1_2016
+
+  LambdaCloudfrontExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+              - edgelambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  LambdaCloudfrontPathRewriteFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Match any (except root) CloudFront request URI ending with "/" and replace it with "/index.html"
+      Runtime: nodejs12.x
+      Role: !GetAtt LambdaCloudfrontExecutionRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = (event, context, callback) => {
+              var request = event.Records[0].cf.request
+              request.uri = request.uri.replace(/\/$/, "\/index.html")
+              return callback(null, request)
+          }
+      Handler: index.handler
+
+  LambdaCloudfrontPathRewriteFunctionVersion:
+    Type: Custom::LatestLambdaVersion
+    Description: Cloudfront can only be associated with versioned lambda functions, publish a function version on create
+    Properties:
+      ServiceToken: !GetAtt PublishLambdaVersion.Arn
+      FunctionName: !Ref LambdaCloudfrontPathRewriteFunction
+
+  PublishLambdaVersionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: PublishVersion
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:PublishVersion
+                Resource: "*"
+
+  PublishLambdaVersion:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs12.x
+      Role: !GetAtt PublishLambdaVersionRole.Arn
+      Code:
+        ZipFile: |
+          const {Lambda} = require("aws-sdk")
+          const {send, SUCCESS, FAILED} = require("cfn-response")
+          const lambda = new Lambda()
+          exports.handler = (event, context) => {
+            const {RequestType, ResourceProperties: {FunctionName}} = event
+            if (RequestType == "Delete") return send(event, context, SUCCESS)
+            lambda.publishVersion({FunctionName}, (err, {FunctionArn}) => {
+              err
+                ? send(event, context, FAILED, err)
+                : send(event, context, SUCCESS, {FunctionArn})
+            })
+          }
+
+  DNSAliasNames:
+    Type: AWS::Route53::RecordSetGroup
+    Description: Alias names must match cloudfront aliases, see "CloudfrontDistribution:DistributionConfig:Aliases"
+    DependsOn:
+      - CloudfrontDistribution
+    Properties:
+      HostedZoneName: !Sub "${Route53HostZoneName}."
+      RecordSets:
+        - Name: !Sub "www.${Route53HostZoneName}"
+          Type: AAAA
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt CloudfrontDistribution.DomainName
+        - Name: !Ref Route53HostZoneName
+          Type: AAAA
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt CloudfrontDistribution.DomainName
+
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodepipelineBucketAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: "s3:*"
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - codebuild:BatchGetBuilds
+                  - codebuild:StartBuild
+                Resource: "*"
+
+  GithubPipelineWebhook:
+    Description: Github access token must have scopes "admin:repo_hook" and "repo"
+    Type: AWS::CodePipeline::Webhook
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: "{{resolve:secretsmanager:tklon.com/github:SecretString:token}}"
+      Filters:
+        - JsonPath: "$.ref"
+          MatchEquals: refs/heads/master
+      TargetPipeline: !Ref BuildDeployPipeline
+      TargetAction: Source
+      Name: GithubPipelineWebhook
+      TargetPipelineVersion: !GetAtt BuildDeployPipeline.Version
+      RegisterWithThirdParty: true
+
+  BuildPipelineBucket:
+    Type: AWS::S3::Bucket
+
+  BuildDeployPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref BuildPipelineBucket
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              InputArtifacts: []
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              OutputArtifacts:
+                - Name: SourceCode
+              RunOrder: 1
+              Configuration:
+                Owner: teeeg
+                Repo: tklon.com
+                PollForSourceChanges: false
+                Branch: master
+                OAuthToken: "{{resolve:secretsmanager:tklon.com/github:SecretString:token}}"
+        - Name: BuildDeploy
+          Actions:
+            - Name: BuildDeploy
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              Configuration:
+                ProjectName: !Ref BuildDeployBuildTask
+              InputArtifacts:
+                - Name: SourceCode
+              RunOrder: 1
+
+  BuildDeployBuildTask:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:3.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - Name: S3_BUCKET
+            Value: !Ref WebsiteStaticAssetsBucket
+            Type: PLAINTEXT
+          - Name: CLOUDFRONT_DISTRIBUTION_ID
+            Value: !Ref CloudfrontDistribution
+            Type: PLAINTEXT
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+      ServiceRole: !Ref CodeBuildRole
+      Source:
+        Type: GITHUB
+        Location: https://github.com/teeeg/tklon.com
+        BuildSpec: ./deploy/buildspec.yaml
