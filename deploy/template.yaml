@@ -12,6 +12,12 @@ Parameters:
     Default: tklon.com
     Description: The Route 53 hosted zone name where DNS records will be created
     Type: String
+  GitHubRepositoryOwner:
+    Type: String
+    Default: teeeg
+  GitHubRepositoryName:
+    Type: String
+    Default: tklon.com
 
 Resources:
   WebsiteStaticAssetsBucket:
@@ -250,8 +256,8 @@ Resources:
                 - Name: SourceCode
               RunOrder: 1
               Configuration:
-                Owner: teeeg
-                Repo: tklon.com
+                Owner: !Ref GitHubRepositoryOwner
+                Repo: !Ref GitHubRepositoryName
                 PollForSourceChanges: false
                 Branch: master
                 OAuthToken: "{{resolve:secretsmanager:tklon.com/github:SecretString:token}}"
@@ -291,5 +297,5 @@ Resources:
       ServiceRole: !Ref CodeBuildRole
       Source:
         Type: GITHUB
-        Location: https://github.com/teeeg/tklon.com
+        Location: !Sub "https://github.com/${GitHubRepositoryOwner}/${GitHubRepositoryName}"
         BuildSpec: ./deploy/buildspec.yaml
