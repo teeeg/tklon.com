@@ -6,7 +6,7 @@ tags: books
 
 #### _Eliot A. Cohen_, _The Big Stick: The Limits of Soft Power ..._
 
-I don't know. This book is trying to argue what the world would look like without a strong American militiary. As a thought experiement it didn't go to great enough lengths to convince me that the American military is really holding this world together.
+I don't know. This book is trying to argue what the world would look like without a strong American military. As a thought experiement it didn't go to great enough lengths to convince me that the American military is really holding this world together.
 
 I am strongly
 
