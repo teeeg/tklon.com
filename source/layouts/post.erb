@@ -5,6 +5,8 @@
 		<p>
 			<%= current_page.date.strftime("%b %Y") %> - <%= partial("partials/tags", :locals => { :current_page => current_page })%>
 		</p>
+
 	</header>
 	<%= yield %>
+    <p class="center">( ✎ <%= link_to 'Edit this file', "https://github.com/teeeg/tklon.com/edit/master/#{current_page.file_descriptor[:full_path].sub(root + "/", "")}" %> )</p>
 <% end %>
