@@ -20,8 +20,11 @@ tklon.com
 - **GitHubRepositoryOwner** the GitHub account or organization that owns the repository, e.g. teeeg
 - **GitHubRepositoryName** the GitHub repository name, e.g. tklon.com
 
-To create a stack with the `aws-cli`:  
-`aws cloudformation create-stack --stack-name myteststack --template-body file://deploy/template.yaml --parameters AcmCertificateArn=arn:aws:acm:us-east-1:295005258746:certificate/2f702844-d6e5-4573-8a41-57fcc0c1992b,Route53HostZoneName=tklon.com,GitHubRepositoryOwner=teeeg,GitHubRepositoryName=tklon.com`
+To create you must have the `aws-cli` installed and configured:  
+`aws cloudformation create-stack --stack-name myteststack --template-body file://deploy/template.yaml --parameters AcmCertificateArn=arn:aws:acm:us-east-1:295005258746:certificate/2f702844-d6e5-4573-8a41-57fcc0c1992b,Route53HostZoneName=tklon.com,GitHubRepositoryOwner=teeeg,GitHubRepositoryName=tklon.com --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM`
+
+To update:
+` aws cloudformation update-stack --stack-name myteststack --template-body file://deploy/template.yaml --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_IAM`
 
 ## Development
 `gem install bundle`  
