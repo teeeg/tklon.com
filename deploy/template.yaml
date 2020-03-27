@@ -177,6 +177,16 @@ Resources:
           AliasTarget:
             HostedZoneId: Z2FDTNDATAQYW2
             DNSName: !GetAtt CloudfrontDistribution.DomainName
+        - Name: !Sub "www.${Route53HostZoneName}"
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt CloudfrontDistribution.DomainName
+        - Name: !Ref Route53HostZoneName
+          Type: A
+          AliasTarget:
+            HostedZoneId: Z2FDTNDATAQYW2
+            DNSName: !GetAtt CloudfrontDistribution.DomainName
 
   CodeBuildRole:
     Type: AWS::IAM::Role
