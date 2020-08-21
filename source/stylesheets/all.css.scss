@@ -5,7 +5,7 @@
 @import "modifiers";
 
 html {
-  font-size: 1rem;
+  font-size: 16px;
   font-family: sans-serif;
   color: rgba(0, 0, 0, 0.9);
   font-weight: lighter;
@@ -14,13 +14,13 @@ html {
 
 body {
   margin: 0 auto;
-  max-width: 42rem;
-  padding: 1rem;
+  max-width: 750px;
+  padding: 16px;
 }
 
 h1, h2, h3, h4, h5 {
   & > span {
-    font-size: 0.5em;
+    font-size: 8px;
   }
 }
 
@@ -37,9 +37,10 @@ header {
   }
   & p {
     margin-top: 0;
-    text-indent: 1rem;
+    text-indent: 16px;
   }
 }
+
 img {
   max-width: 100%;
 }

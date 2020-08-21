@@ -1,0 +1,13 @@
+<picture>
+    <source type="image/webp" srcset="<%= href %>?d=375&f=webp 375w,
+             <%= href %>?d=750&f=webp 750w,
+             <%= href %>?d=1500&f=webp 1500w,
+             <%= href %>?d=2250&f=webp 2250w"
+            sizes="(min-width: 750px) 750px" />
+    <source srcset="<%= href %>?d=375&f=jpeg 375w,
+             <%= href %>?d=750&f=jpeg 750w,
+             <%= href %>?d=1500&f=jpeg 1500w,
+             <%= href %>?d=2250&f=webp 2250w"
+            sizes="(min-width: 750px) 750px" />
+    <img src="<%= href %>?d=750&f=jpeg" alt="<%= alt_text %>" />
+</picture>
