@@ -3,7 +3,7 @@
 	<header>
 		<h2><%= current_page.title %></h2>
 		<p>
-			<%= current_page.date.strftime("%b %Y") %> - <%= partial("partials/tags", :locals => { :current_page => current_page })%>
+			<%= current_page.date.strftime("%b %d %Y") %> - <%= partial("partials/tags", :locals => { :current_page => current_page })%>
 		</p>
 
 	</header>
