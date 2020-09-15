@@ -2,12 +2,12 @@
   "name": "tklon.com",
   "version": "1.0.0",
   "dependencies": {
-    "@types/query-string": "^3.0.31",
-    "query-string": "^4.3.1",
-    "ts-loader": "^6.2.1",
+    "@types/query-string": "^3.0.32",
+    "query-string": "^4.3.4",
+    "ts-loader": "^6.2.2",
     "typescript": "^2.9.2",
-    "webpack": "^4.42.0",
-    "webpack-cli": "^3.3.11"
+    "webpack": "^4.44.1",
+    "webpack-cli": "^3.3.12"
   },
   "scripts": {
     "build": "webpack --mode=production"
