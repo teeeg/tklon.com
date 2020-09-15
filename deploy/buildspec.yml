@@ -7,6 +7,7 @@ phases:
       - gem install bundler
   pre_build:
     commands:
+      - cd src
       - bundle install
       - npm install
   build:

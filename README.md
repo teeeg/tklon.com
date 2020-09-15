@@ -1,20 +1,15 @@
 ## What is this
 
-A static site generator that uses GitHub webhooks to trigger build and deploy using CodePipeline.
+Infrastructure for a CDN-backed S3 bucket that can be used with any static site generator. Changes merged to master will trigger build script defined by `buildspec.yml` and sync to S3/Cloudfront.
 
 ## Directory structure
 
 ```
 tklon.com
 ├── deploy
-│   ├── buildspec.yml --> CodeBuild commands to build and deploy assets.
+│   ├── buildspec.yml --> CodeBuild commands to build and deploy assets
 │   └── template.yml --> CloudFormation templates (CDN, DNS aliases, CD pipeline, etc.)
-└── source --> Raw website source content, layouts, JavaScripts, and styles
-    ├── layouts
-    ├── partials
-    ├── posts
-    ├── stylesheets
-    └── typescripts
+└── src --> Structured data that buildspec will transform into static assets
 ```
 
 ## Deploying CloudFormation changes
@@ -34,7 +29,8 @@ To update:
 
 ## Local development
 
+From `src` dir:  
 `gem install bundle`  
 `bundle install`  
-`npm install`
+`npm install`  
 `bundle exec middleman server`

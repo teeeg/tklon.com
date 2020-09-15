@@ -1,19 +1,5 @@
-# bundler
-/.bundle
-
-# middleman
-/build
-.tmp
-
-# cache
-/.sass-cache
-/.cache
-
 # osx
 .DS_Store
-
-# nodejs
-node_modules
 
 # intellij
 .idea
