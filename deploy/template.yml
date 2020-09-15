@@ -308,4 +308,4 @@ Resources:
       Source:
         Type: GITHUB
         Location: !Sub "https://github.com/${GitHubRepositoryOwner}/${GitHubRepositoryName}"
-        BuildSpec: ./deploy/buildspec.yaml
+        BuildSpec: ./deploy/buildspec.yml
