@@ -8,5 +8,5 @@
 
 	</header>
 	<%= yield %>
-    <p class="center">( ✎ <%= link_to 'Edit this file', "https://github.com/teeeg/tklon.com/edit/master/#{current_page.file_descriptor[:full_path].sub(root + "/", "")}" %> )</p>
+    <p class="center">( ✎ <%= link_to 'Edit this file', "https://github.com/teeeg/tklon.com/edit/master/src/#{current_page.file_descriptor[:full_path].sub(root + "/", "")}" %> )</p>
 <% end %>
