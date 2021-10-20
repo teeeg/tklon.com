@@ -1,4 +1,4 @@
-## What is this
+## What is this?
 
 Infrastructure for a CDN-backed S3 bucket that can be used with any static site generator. Changes merged to master will trigger build script defined by `buildspec.yml` and sync to S3/Cloudfront.
 
