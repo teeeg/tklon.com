@@ -29,6 +29,11 @@ To update:
 
 ## Local development
 
+Requirements:
+- [Ruby](https://www.ruby-lang.org/)
+- [RubyGems](https://rubygems.org/)
+- [NPM](https://docs.npmjs.com/) CLI
+
 From `src` dir:  
 `gem install bundle`  
 `bundle install`  
