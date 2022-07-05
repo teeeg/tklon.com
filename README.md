@@ -38,4 +38,7 @@ From `src` dir:
 `gem install bundle`  
 `bundle install`  
 `npm install`  
-`bundle exec middleman server`
+`bundle exec middleman`
+
+To test production build: 
+`bundle exec middleman build --verbose`
