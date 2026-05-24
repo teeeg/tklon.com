@@ -12,32 +12,14 @@ Since I don't own a car my Mom drove me, my bike, and few boxes up the road to m
 But distances are long -- picking up toilet paper is a 16 mile round trip. The monotony of the long flats begins to grate while the motor, programmatically throttled, more or less sits idle between my legs while I keep slugging away at 21MPH. The bike has in some ways felt like a hindrance instead of an enabler to my mobility. So I bought a tuning chip [from the Czech Republic](https://www.speedbox-tuning.com/) that manipulates the controller's speed sensor readings to obviate the limit. Now, the Bosch motor continues to provide assistance past 20MPH with no noticeable degradation in performance (battery range aside). Installation was easy and has since "just worked". It has washed my bike of its limitations. I'm free again.
 
 ### Installation
-<%= partial(
-    "partials/image",
-    :locals => {
-        :name => "speedbox-motor-exposed",
-        :alt_text => "Exposed Bosch e-bike motor"
-    })
-%>
+<%= responsive_image "speedbox-motor-exposed", "Exposed Bosch e-bike motor" %>
 
 Unfasten the motor housing by removing 2 allen screws on the drive-side and 3 phillips screws on the non-drive side. The housing can be removed without pulling the crank. 
 
-<%= partial(
-    "partials/image",
-    :locals => {
-        :name => "speedbox-cable-config",
-        :alt_text => "Cable configuration of Bosch Gen 3 e-bike motor"
-    })
-%>
+<%= responsive_image "speedbox-cable-config", "Cable configuration of Bosch Gen 3 e-bike motor" %>
 
 Remove the display cable (2) and the speed sensor (3) and insert into the reciprocal Speedbox junction connectors. The battery (3) and light cables (4) can be left as is. 
 
-<%= partial(
-    "partials/image",
-    :locals => {
-        :name => "speedbox-cable-arrangement",
-        :alt_text => "Cable arrangement after installing a Speedbox chip"
-    })
-%>
+<%= responsive_image "speedbox-cable-arrangement", "Cable arrangement after installing a Speedbox chip" %>
 
 I nestled the Speedbox chip and cables into the seatpost tube and fixed their position with the battery cable.

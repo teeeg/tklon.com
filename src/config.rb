@@ -43,11 +43,13 @@ end
 ###
 
 # Methods defined in the helpers block are available in templates
-# helpers do
-#   def some_helper
-#     "Helping"
-#   end
-# end
+helpers do
+  # Render a responsive <picture> for an image in src/images/. `name` is the
+  # original's basename without extension; see partials/_image.erb.
+  def responsive_image(name, alt_text)
+    partial("partials/image", locals: { name: name, alt_text: alt_text })
+  end
+end
 
 # Build-specific configuration
 configure :build do
