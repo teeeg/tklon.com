@@ -8,3 +8,7 @@
 
 # nodejs
 node_modules
+
+# bundler
+/.bundle
+/vendor/bundle
