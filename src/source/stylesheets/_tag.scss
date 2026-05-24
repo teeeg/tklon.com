@@ -1,4 +1,6 @@
 .Tag {
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -11,10 +13,6 @@
 .Tag-selected {
   background-color: var(--accent);
   color: #fff;
-  border-radius: 3px;
-  padding: 0 0.3em;
-  // cancel the padding's horizontal advance so selecting never reflows the row
-  margin: 0 -0.3em;
 }
 
 .Article {
