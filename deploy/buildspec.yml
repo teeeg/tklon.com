@@ -4,6 +4,8 @@ phases:
     runtime-versions:
       ruby: 3.4
       nodejs: 24
+    commands:
+      - gem install bundler -v 2.6.9
   pre_build:
     commands:
       - cd src
