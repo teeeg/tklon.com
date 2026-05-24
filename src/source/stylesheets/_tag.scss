@@ -13,6 +13,8 @@
   color: #fff;
   border-radius: 3px;
   padding: 0 0.3em;
+  // cancel the padding's horizontal advance so selecting never reflows the row
+  margin: 0 -0.3em;
 }
 
 .Article {
