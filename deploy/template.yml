@@ -136,7 +136,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: lambda:PublishVersion
-                Resource: "*"
+                Resource: !GetAtt LambdaCloudfrontPathRewriteFunction.Arn
 
   PublishLambdaVersion:
     Type: AWS::Lambda::Function
