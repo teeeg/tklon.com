@@ -9,6 +9,8 @@ phases:
   pre_build:
     commands:
       - cd src
+      # use CodeBuild's runtime-versions Ruby; the local exact-patch pin isn't installed here
+      - rm -f .ruby-version
       - bundle install
       - npm install
   build:
