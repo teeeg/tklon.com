@@ -59,6 +59,8 @@ function init(): void {
     highlightTag(query, tag);
   });
   highlightArticles(query);
+  // enable transitions only after the initial filter, so the on-load state doesn't visibly fade
+  document.documentElement.classList.add("ready");
 }
 
 document.addEventListener("DOMContentLoaded", init);

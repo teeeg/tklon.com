@@ -15,7 +15,9 @@
   color: #fff;
 }
 
-.Article {
+// only animate filter changes after the initial on-load filter (set by JS adding .ready),
+// so the page doesn't visibly fade articles in/out on first paint
+.ready .Article {
   transition: opacity 0.2s;
 }
 
