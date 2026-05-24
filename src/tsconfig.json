@@ -8,5 +8,6 @@
     "allowJs": true,
     "removeComments": true,
     "moduleResolution": "bundler"
-  }
+  },
+  "include": ["source/typescripts/**/*.ts"]
 }
