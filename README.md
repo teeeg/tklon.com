@@ -1,6 +1,6 @@
 ## What is this
 
-Infrastructure for a CDN-backed S3 bucket that can be used with any static site generator. Changes merged to master will trigger build script defined by `buildspec.yml` and sync to S3/Cloudfront.
+Infrastructure for a CDN-backed S3 bucket that can be used with any static site generator. Changes merged to master will trigger the build script defined by `buildspec.yml` and sync to S3/Cloudfront.
 
 ## Directory structure
 
@@ -35,7 +35,7 @@ Requirements:
 - [NPM](https://docs.npmjs.com/) CLI
 
 From `src` dir:  
-`gem install bundle`  
+`gem install bundler`  
 `bundle install`  
 `npm install`  
 `bundle exec middleman`
