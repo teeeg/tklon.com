@@ -1,9 +1,4 @@
-# Supported browsers — keep in sync with tsconfig "target": ES2020.
-# First versions with full ES2020 support (optional chaining, nullish
-# coalescing, BigInt). https://github.com/browserslist/browserslist
-Chrome >= 80
-Edge >= 80
-Firefox >= 74
-Safari >= 14
-iOS >= 14
+# Modern evergreen browsers only (hobby blog), in sync with tsconfig "target": ESNext.
+# https://github.com/browserslist/browserslist
+last 2 versions
 not dead
