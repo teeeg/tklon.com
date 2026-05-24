@@ -86,6 +86,7 @@ a:hover {
 
 img {
   max-width: 100%;
+  height: auto; /* preserve aspect ratio from the width/height attributes */
 }
 
 section:after {
