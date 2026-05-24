@@ -227,7 +227,16 @@ Resources:
         Type: S3
         Location: !Ref BuildPipelineBucket
       RestartExecutionOnUpdate: true
+      PipelineType: V2
       RoleArn: !GetAtt CodePipelineRole.Arn
+      Triggers:
+        - ProviderType: CodeStarSourceConnection
+          GitConfiguration:
+            SourceActionName: Source
+            Push:
+              - Branches:
+                  Includes:
+                    - master
       Stages:
         - Name: Source
           Actions:
