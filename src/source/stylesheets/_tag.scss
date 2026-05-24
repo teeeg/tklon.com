@@ -24,3 +24,17 @@
 .hidden {
   opacity: 0.15;
 }
+
+// post list: title left, muted date pushed to the right
+.Article {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.Article .date {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
