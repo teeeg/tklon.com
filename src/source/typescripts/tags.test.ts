@@ -86,4 +86,17 @@ describe("tag filtering", () => {
     expect(isFaded("Film post")).toBe(false);
     expect(isFaded("Both post")).toBe(false);
   });
+
+  it("handles tag names with CSS-special characters without throwing", () => {
+    document.body.replaceChildren(
+      makeTag("c++"),
+      makeArticle("Cpp post", ["c++"]),
+      makeArticle("Other post", ["books"])
+    );
+    document.dispatchEvent(new Event("DOMContentLoaded"));
+
+    expect(() => tag("c++").click()).not.toThrow();
+    expect(isFaded("Cpp post")).toBe(false); // matches the selected tag
+    expect(isFaded("Other post")).toBe(true); // missing it
+  });
 });

@@ -25,7 +25,7 @@ function highlightArticles(query: URLSearchParams): void {
 
   // Fade any article that is missing at least one selected tag.
   if (tags.length) {
-    const stale = tags.map(tag => `.${ArticleClass}:not(.${tag})`).join(",");
+    const stale = tags.map(tag => `.${ArticleClass}:not(.${CSS.escape(tag)})`).join(",");
     Array.from(document.querySelectorAll<HTMLElement>(stale)).forEach(el =>
       el.classList.add(HiddenClass)
     );
