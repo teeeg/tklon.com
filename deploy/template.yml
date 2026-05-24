@@ -77,92 +77,28 @@ Resources:
             QueryString: true
           TargetOriginId: !Ref WebsiteStaticAssetsBucket
           ViewerProtocolPolicy: redirect-to-https
-          LambdaFunctionAssociations:
+          FunctionAssociations:
             - EventType: viewer-request
-              LambdaFunctionARN: !GetAtt LambdaCloudfrontPathRewriteFunctionVersion.FunctionArn
+              FunctionARN: !GetAtt PathRewriteFunction.FunctionMetadata.FunctionARN
         ViewerCertificate:
           AcmCertificateArn: !Ref AcmCertificateArn
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1.2_2021
 
-  LambdaCloudfrontExecutionRole:
-    Type: AWS::IAM::Role
+  PathRewriteFunction:
+    Type: AWS::CloudFront::Function
     Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          Effect: Allow
-          Principal:
-            Service:
-              - lambda.amazonaws.com
-              - edgelambda.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
-  LambdaCloudfrontPathRewriteFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      Description: Match any (except root) CloudFront request URI ending with "/" and replace it with "/index.html"
-      Runtime: nodejs12.x
-      Role: !GetAtt LambdaCloudfrontExecutionRole.Arn
-      Code:
-        ZipFile: |
-          exports.handler = (event, context, callback) => {
-              var request = event.Records[0].cf.request
-              request.uri = request.uri.replace(/\/$/, "\/index.html")
-              return callback(null, request)
-          }
-      Handler: index.handler
-
-  LambdaCloudfrontPathRewriteFunctionVersion:
-    Type: Custom::LatestLambdaVersion
-    Description: Cloudfront can only be associated with versioned lambda functions, publish a function version on create
-    Properties:
-      ServiceToken: !GetAtt PublishLambdaVersion.Arn
-      FunctionName: !Ref LambdaCloudfrontPathRewriteFunction
-
-  PublishLambdaVersionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: PublishVersion
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action: lambda:PublishVersion
-                Resource: !GetAtt LambdaCloudfrontPathRewriteFunction.Arn
-
-  PublishLambdaVersion:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: index.handler
-      Runtime: nodejs12.x
-      Role: !GetAtt PublishLambdaVersionRole.Arn
-      Code:
-        ZipFile: |
-          const {Lambda} = require("aws-sdk")
-          const {send, SUCCESS, FAILED} = require("cfn-response")
-          const lambda = new Lambda()
-          exports.handler = (event, context) => {
-            const {RequestType, ResourceProperties: {FunctionName}} = event
-            if (RequestType == "Delete") return send(event, context, SUCCESS)
-            lambda.publishVersion({FunctionName}, (err, {FunctionArn}) => {
-              err
-                ? send(event, context, FAILED, err)
-                : send(event, context, SUCCESS, {FunctionArn})
-            })
-          }
+      Name: !Sub "${AWS::StackName}-path-rewrite"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Append index.html to directory-style request URIs
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          request.uri = request.uri.replace(/\/$/, '/index.html');
+          return request;
+        }
 
   DNSAliasNames:
     Type: AWS::Route53::RecordSetGroup
