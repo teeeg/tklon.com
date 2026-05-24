@@ -1,0 +1,48 @@
+name: deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+# OIDC: assume the AWS deploy role with a short-lived token (no stored keys)
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          working-directory: src
+          bundler-cache: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: npm install
+
+      - run: NO_CONTRACTS=true bundle exec middleman build
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::295005258746:role/tklondotcom-GitHubActionsDeployRole-KmJpDGB6eg8r
+          aws-region: us-east-1
+
+      - name: Sync to S3 and invalidate CloudFront
+        run: |
+          aws s3 sync build/ s3://tklon.com-assets --delete
+          aws cloudfront create-invalidation --distribution-id E12C54H3GMYHN0 --paths '/*'
