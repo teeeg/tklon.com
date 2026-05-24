@@ -54,10 +54,11 @@ async function main() {
     const name = file.replace(INPUT_RE, "");
     const input = path.join(SOURCE_DIR, file);
 
-    // .rotate() bakes in EXIF orientation; read the post-rotation dimensions.
-    const meta = await sharp(input).rotate().metadata();
-    const nativeWidth = meta.width;
-    const nativeHeight = meta.height;
+    // metadata().width/height are the raw header dims and ignore EXIF
+    // orientation; meta.autoOrient holds the corrected dims that match what
+    // .rotate() produces in the output variants below.
+    const meta = await sharp(input).metadata();
+    const { width: nativeWidth, height: nativeHeight } = meta.autoOrient ?? meta;
 
     // Never upscale: cap the requested widths at the native width.
     let widths = WIDTHS.filter((w) => w <= nativeWidth);
