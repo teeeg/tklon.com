@@ -2,7 +2,6 @@
   "name": "tklon.com",
   "version": "1.0.0",
   "dependencies": {
-    "query-string": "7.1.3",
     "ts-loader": "9.5.7",
     "typescript": "5.9.3",
     "webpack": "5.107.1",

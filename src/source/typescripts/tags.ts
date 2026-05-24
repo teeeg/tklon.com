@@ -1,31 +1,27 @@
-import * as qs from "query-string";
-
 const TagClass = "Tag";
 const HiddenClass = "hidden";
 const ArticleClass = "Article";
-
-type QueryString = qs.ParsedQuery;
 
 function tagName(element: HTMLElement): string {
   return (element.textContent || "").trim();
 }
 
-function toggleTagInQuery(query: QueryString, name: string): QueryString {
-  if (Object.prototype.hasOwnProperty.call(query, name)) delete query[name];
-  else query[name] = null;
+function toggleTagInQuery(query: URLSearchParams, name: string): URLSearchParams {
+  if (query.has(name)) query.delete(name);
+  else query.set(name, "");
   return query;
 }
 
 function toggleTag(event: Event, target: HTMLElement): void {
   event.preventDefault();
-  const query = toggleTagInQuery(qs.parse(location.search), tagName(target));
+  const query = toggleTagInQuery(new URLSearchParams(location.search), tagName(target));
   const baseUrl = `${location.protocol}//${location.host}${location.pathname}?`;
-  window.history.replaceState({}, "", baseUrl + qs.stringify(query));
+  window.history.replaceState({}, "", baseUrl + query.toString());
   updateView(query);
 }
 
-function highlightArticles(query: QueryString): void {
-  const tags = Object.keys(query).map(tag => tag.trim());
+function highlightArticles(query: URLSearchParams): void {
+  const tags = Array.from(query.keys()).map(tag => tag.trim());
 
   // Fade any article that is missing at least one selected tag.
   if (tags.length) {
@@ -40,24 +36,23 @@ function highlightArticles(query: QueryString): void {
   Array.from(matching).forEach(el => el.classList.remove(HiddenClass));
 }
 
-function highlightTags(query: QueryString): void {
+function highlightTags(query: URLSearchParams): void {
   Array.from(document.getElementsByClassName(TagClass)).forEach(el =>
     highlightTag(query, el as HTMLElement)
   );
 }
 
-function highlightTag(query: QueryString, element: HTMLElement): void {
-  const selected = Object.prototype.hasOwnProperty.call(query, tagName(element));
-  element.classList.toggle(`${TagClass}-selected`, selected);
+function highlightTag(query: URLSearchParams, element: HTMLElement): void {
+  element.classList.toggle(`${TagClass}-selected`, query.has(tagName(element)));
 }
 
-function updateView(query: QueryString): void {
+function updateView(query: URLSearchParams): void {
   highlightTags(query);
   highlightArticles(query);
 }
 
 function init(): void {
-  const query = qs.parse(location.search);
+  const query = new URLSearchParams(location.search);
   Array.from(document.getElementsByClassName(TagClass)).forEach(el => {
     const tag = el as HTMLElement;
     tag.addEventListener("click", event => toggleTag(event, tag));
