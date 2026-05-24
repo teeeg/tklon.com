@@ -7,14 +7,14 @@
     <% description = current_page.data.description || "tklon.com — a personal blog." %>
     <% canonical = "https://tklon.com#{current_page.url}" %>
 
-    <title><%= page_title %></title>
-    <meta name="description" content="<%= description %>">
-    <link rel="canonical" href="<%= canonical %>">
+    <title><%= h(page_title) %></title>
+    <meta name="description" content="<%= h(description) %>">
+    <link rel="canonical" href="<%= h(canonical) %>">
 
-    <meta property="og:title" content="<%= page_title %>">
-    <meta property="og:description" content="<%= description %>">
+    <meta property="og:title" content="<%= h(page_title) %>">
+    <meta property="og:description" content="<%= h(description) %>">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="<%= canonical %>">
+    <meta property="og:url" content="<%= h(canonical) %>">
     <meta property="og:site_name" content="tklon.com">
     <meta name="twitter:card" content="summary">
     
