@@ -3,3 +3,7 @@
 
 # intellij
 .idea
+
+# secrets
+.env
+.env.*
