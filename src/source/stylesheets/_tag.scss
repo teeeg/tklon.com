@@ -1,16 +1,24 @@
+.Tag {
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .Tag:before {
   content: '#';
+  opacity: 0.6;
 }
 
 .Tag-selected {
-  background-color: lightpink;
+  background-color: var(--accent);
+  color: #fff;
+  border-radius: 3px;
+  padding: 0 0.3em;
 }
 
 .Article {
-  transition: 0.2s;
+  transition: opacity 0.2s;
 }
 
 .hidden {
-  opacity: 0.1;
-  transition: 0.2s;
+  opacity: 0.15;
 }
