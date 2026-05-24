@@ -3,6 +3,9 @@ name: deploy
 on:
   push:
     branches: [master]
+    paths:
+      - "src/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
 # OIDC: assume the AWS deploy role with a short-lived token (no stored keys)
