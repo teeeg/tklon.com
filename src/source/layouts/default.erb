@@ -1,12 +1,22 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <meta property="og:title" content="<%= current_page.data.title || 'my blog ✌️' %>"/>
+    <% page_title = current_page.data.title || "tklon.com" %>
+    <% description = current_page.data.description || "tklon.com — a personal blog." %>
+    <% canonical = "https://tklon.com#{current_page.url}" %>
 
-    <title><%= current_page.data.title || "tklon.com" %></title>
+    <title><%= page_title %></title>
+    <meta name="description" content="<%= description %>">
+    <link rel="canonical" href="<%= canonical %>">
+
+    <meta property="og:title" content="<%= page_title %>">
+    <meta property="og:description" content="<%= description %>">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="<%= canonical %>">
+    <meta property="og:site_name" content="tklon.com">
+    <meta name="twitter:card" content="summary">
     
     <%= stylesheet_link_tag :all %>
   </head>
