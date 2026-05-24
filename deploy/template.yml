@@ -292,3 +292,51 @@ Resources:
       Source:
         Type: CODEPIPELINE
         BuildSpec: ./deploy/buildspec.yml
+
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 6938fd4d98bab03faadb97b34396831e3780aea1
+        - 1c58a3a8518e8759bf075b76b750d4f2df264fcd
+
+  GitHubActionsDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepositoryOwner}/${GitHubRepositoryName}:ref:refs/heads/master"
+      Policies:
+        - PolicyName: DeployContent
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetBucketLocation
+                Resource: !GetAtt WebsiteStaticAssetsBucket.Arn
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/*"
+              - Effect: Allow
+                Action: cloudfront:CreateInvalidation
+                Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontDistribution}"
+
+Outputs:
+  GitHubActionsRoleArn:
+    Description: Role assumed by the GitHub Actions deploy workflow via OIDC
+    Value: !GetAtt GitHubActionsDeployRole.Arn
