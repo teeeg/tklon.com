@@ -201,22 +201,15 @@ Resources:
                   - codebuild:BatchGetBuilds
                   - codebuild:StartBuild
                 Resource: !GetAtt BuildDeployBuildTask.Arn
+              - Effect: Allow
+                Action: codestar-connections:UseConnection
+                Resource: !Ref GitHubConnection
 
-  GithubPipelineWebhook:
-    Description: Github access token must have scopes "admin:repo_hook" and "repo"
-    Type: AWS::CodePipeline::Webhook
+  GitHubConnection:
+    Type: AWS::CodeStarConnections::Connection
     Properties:
-      Authentication: GITHUB_HMAC
-      AuthenticationConfiguration:
-        SecretToken: "{{resolve:secretsmanager:tklon.com/github:SecretString:token}}"
-      Filters:
-        - JsonPath: "$.ref"
-          MatchEquals: refs/heads/master
-      TargetPipeline: !Ref BuildDeployPipeline
-      TargetAction: Source
-      Name: GithubPipelineWebhook
-      TargetPipelineVersion: !GetAtt BuildDeployPipeline.Version
-      RegisterWithThirdParty: true
+      ConnectionName: !Sub "${AWS::StackName}-github"
+      ProviderType: GitHub
 
   BuildPipelineBucket:
     Type: AWS::S3::Bucket
@@ -242,18 +235,17 @@ Resources:
               InputArtifacts: []
               ActionTypeId:
                 Category: Source
-                Owner: ThirdParty
-                Provider: GitHub
+                Owner: AWS
+                Provider: CodeStarSourceConnection
                 Version: 1
               OutputArtifacts:
                 - Name: SourceCode
               RunOrder: 1
               Configuration:
-                Owner: !Ref GitHubRepositoryOwner
-                Repo: !Ref GitHubRepositoryName
-                PollForSourceChanges: false
-                Branch: master
-                OAuthToken: "{{resolve:secretsmanager:tklon.com/github:SecretString:token}}"
+                ConnectionArn: !Ref GitHubConnection
+                FullRepositoryId: !Sub "${GitHubRepositoryOwner}/${GitHubRepositoryName}"
+                BranchName: master
+                OutputArtifactFormat: CODE_ZIP
         - Name: BuildDeploy
           Actions:
             - Name: BuildDeploy
@@ -272,7 +264,7 @@ Resources:
     Type: AWS::CodeBuild::Project
     Properties:
       Artifacts:
-        Type: NO_ARTIFACTS
+        Type: CODEPIPELINE
       Environment:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/standard:8.0
@@ -289,6 +281,5 @@ Resources:
           Status: ENABLED
       ServiceRole: !Ref CodeBuildRole
       Source:
-        Type: GITHUB
-        Location: !Sub "https://github.com/${GitHubRepositoryOwner}/${GitHubRepositoryName}"
+        Type: CODEPIPELINE
         BuildSpec: ./deploy/buildspec.yml
