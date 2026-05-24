@@ -26,6 +26,12 @@
 }
 
 // post list: title left, muted date pushed to the right
+.Articles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .Article {
   display: flex;
   justify-content: space-between;

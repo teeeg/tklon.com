@@ -10,11 +10,13 @@ layout: layouts/default
   <% end %>
 </p>
 
-<% page_articles.each_with_index do |article, i| %>
-  <div class="Article <%= article.tags.join(' ') %>">
+<ul class="Articles">
+<% page_articles.each do |article| %>
+  <li class="Article <%= article.tags.join(' ') %>">
     <%= link_to article.title, article %>
     <time class="date" datetime="<%= article.date.strftime("%F") %>"><%= article.date.strftime("%b %Y") %></time>
-  </div>
+  </li>
 <% end %>
+</ul>
 
 <%= javascript_include_tag  :tags %>
