@@ -108,7 +108,9 @@ footer {
 }
 
 blockquote {
-  margin: var(--s3) var(--s4);
+  margin: var(--s3) 0;
+  padding-left: var(--s3);
+  border-left: 2px solid var(--muted);
   & > p:not(:last-child) {
     display: inline;
     &:before, &:after {
