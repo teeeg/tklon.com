@@ -7,3 +7,7 @@
 # secrets
 .env
 .env.*
+
+# generated responsive image variants + manifest (rebuilt from src/images/)
+src/source/images/
+src/data/images.json

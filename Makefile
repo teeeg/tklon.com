@@ -9,7 +9,7 @@ TEMPLATE := deploy/template.yml
 RUBYPATH := PATH="$$HOME/.rbenv/shims:$$PATH"
 
 .DEFAULT_GOAL := help
-.PHONY: help install build serve test infra publish deploy
+.PHONY: help install images build serve test infra publish deploy
 
 help: ## List available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -18,10 +18,13 @@ help: ## List available targets
 install: ## Install Ruby gems + npm deps
 	cd src && $(RUBYPATH) bundle install && npm install
 
-build: ## Build the static site into src/build
+images: ## Generate responsive image variants from src/images/
+	cd src && node scripts/build-images.mjs
+
+build: images ## Build the static site into src/build
 	cd src && $(RUBYPATH) NO_CONTRACTS=true bundle exec middleman build
 
-serve: ## Run the local dev server (http://localhost:4567)
+serve: images ## Run the local dev server (http://localhost:4567)
 	cd src && $(RUBYPATH) bundle exec middleman server
 
 test: ## Run the JS (vitest) suite
