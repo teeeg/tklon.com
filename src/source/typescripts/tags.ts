@@ -4,98 +4,66 @@ const TagClass = "Tag";
 const HiddenClass = "hidden";
 const ArticleClass = "Article";
 
-interface QueryStringRaw {
-  [propName: string]: string | string[];
+type QueryString = qs.ParsedQuery;
+
+function tagName(element: HTMLElement): string {
+  return (element.textContent || "").trim();
 }
 
-interface Tag {
-  name: string;
+function toggleTagInQuery(query: QueryString, name: string): QueryString {
+  if (Object.prototype.hasOwnProperty.call(query, name)) delete query[name];
+  else query[name] = null;
+  return query;
 }
 
-function toggleSearchQueryProperty(
-  queryString: QueryStringRaw,
-  tag: Tag
-): QueryStringRaw {
-  Object.hasOwnProperty.call(queryString, tag.name)
-    ? delete queryString[tag.name]
-    : (queryString[tag.name] = null);
-  return queryString;
-}
-
-function toggleTag(event: Event, target: HTMLElement) {
+function toggleTag(event: Event, target: HTMLElement): void {
   event.preventDefault();
-  let updatedQueryString = toggleSearchQueryProperty(
-    qs.parse(location.search),
-    { name: target.innerText }
-  );
-  let baseUrl = [
-    location.protocol,
-    "//",
-    location.host,
-    location.pathname,
-    "?"
-  ].join("");
-  window.history.replaceState(
-    {},
-    "",
-    baseUrl + qs.stringify(updatedQueryString)
-  );
-  updateView(updatedQueryString);
+  const query = toggleTagInQuery(qs.parse(location.search), tagName(target));
+  const baseUrl = `${location.protocol}//${location.host}${location.pathname}?`;
+  window.history.replaceState({}, "", baseUrl + qs.stringify(query));
+  updateView(query);
 }
 
-function highlightArticles(queryString: QueryStringRaw) {
-  let selectedTags = Object.keys(queryString).concat(ArticleClass);
-  let query: string = selectedTags
-    .map(tag => `div:not(.${tag.trim()})`)
-    .join(",");
-  let articlesToHide: NodeListOf<Element> = query.length
-    ? document.querySelectorAll(query)
-    : document.querySelectorAll(null);
-  let articlesToShow: HTMLCollectionOf<Element> = document.getElementsByClassName(
-    selectedTags.join(" ")
-  );
-  forEach(articlesToHide, (element: HTMLElement) =>
-    element.classList.add(HiddenClass)
-  );
-  forEach(articlesToShow, (element: HTMLElement) =>
-    element.classList.remove(HiddenClass)
-  );
-}
+function highlightArticles(query: QueryString): void {
+  const tags = Object.keys(query).map(tag => tag.trim());
 
-function highlightTags(queryString: QueryStringRaw) {
-  const tags: HTMLCollectionOf<Element> = document.getElementsByClassName(
-    TagClass
-  );
-  forEach(tags, (element: HTMLElement) => highlightTag(queryString, element));
-}
-
-function highlightTag(queryString: QueryStringRaw, element: HTMLElement) {
-  if (Object.hasOwnProperty.call(queryString, element.innerText))
-    element.classList.add(`${TagClass}-selected`);
-  else element.classList.remove(`${TagClass}-selected`);
-}
-
-function forEach(
-  someCollection: HTMLCollectionOf<any> | NodeListOf<any>,
-  f: Function
-) {
-  for (let index = 0; index < someCollection.length; index++) {
-    f(someCollection[index], index);
+  // Fade any article that is missing at least one selected tag.
+  if (tags.length) {
+    const stale = tags.map(tag => `.${ArticleClass}:not(.${tag})`).join(",");
+    Array.from(document.querySelectorAll<HTMLElement>(stale)).forEach(el =>
+      el.classList.add(HiddenClass)
+    );
   }
+
+  // Un-fade the articles that match every selected tag.
+  const matching = document.getElementsByClassName([ArticleClass, ...tags].join(" "));
+  Array.from(matching).forEach(el => el.classList.remove(HiddenClass));
 }
 
-function init() {
-  let queryString = qs.parse(location.search);
-  forEach(document.getElementsByClassName(TagClass), (element: HTMLElement) => {
-    element.addEventListener("click", ev => toggleTag(ev, element));
-    highlightTag(queryString, element);
+function highlightTags(query: QueryString): void {
+  Array.from(document.getElementsByClassName(TagClass)).forEach(el =>
+    highlightTag(query, el as HTMLElement)
+  );
+}
+
+function highlightTag(query: QueryString, element: HTMLElement): void {
+  const selected = Object.prototype.hasOwnProperty.call(query, tagName(element));
+  element.classList.toggle(`${TagClass}-selected`, selected);
+}
+
+function updateView(query: QueryString): void {
+  highlightTags(query);
+  highlightArticles(query);
+}
+
+function init(): void {
+  const query = qs.parse(location.search);
+  Array.from(document.getElementsByClassName(TagClass)).forEach(el => {
+    const tag = el as HTMLElement;
+    tag.addEventListener("click", event => toggleTag(event, tag));
+    highlightTag(query, tag);
   });
-  highlightArticles(queryString);
-}
-
-function updateView(queryString: QueryStringRaw) {
-  highlightTags(queryString);
-  highlightArticles(queryString);
+  highlightArticles(query);
 }
 
 document.addEventListener("DOMContentLoaded", init);
