@@ -1,9 +1,12 @@
 // Build-time responsive image generation.
 //
-// Reads source originals from src/images/, emits AVIF/WebP/JPEG variants at a
-// fixed set of widths into src/source/images/ (so Middleman copies them into
-// the build), and writes src/data/images.json so the _image.erb partial knows
-// which widths exist and each image's intrinsic dimensions.
+// Reads source originals from src/images/, emits AVIF/WebP variants at a fixed
+// set of widths into src/source/images/ (so Middleman copies them into the
+// build), and writes src/data/images.json so the _image.erb partial knows which
+// widths exist and each image's intrinsic dimensions.
+//
+// sharp drops all input metadata by default (we never call .keepMetadata/
+// .withMetadata), so the published variants carry no EXIF/GPS/location data.
 //
 // Originals are committed to git; the generated variants and manifest are not
 // (see .gitignore) — they are rebuilt on every `make build`.
@@ -18,14 +21,15 @@ const SOURCE_DIR = path.join(SRC_ROOT, "images");
 const OUT_DIR = path.join(SRC_ROOT, "source", "images");
 const MANIFEST = path.join(SRC_ROOT, "data", "images.json");
 
-// Matches the srcset breakpoints in source/partials/_image.erb.
-const WIDTHS = [375, 750, 1500, 2250];
+// Matches the srcset breakpoints in source/partials/_image.erb. The content
+// column is 750px, so 750 covers 1x displays and 1500 covers 2x (retina).
+const WIDTHS = [750, 1500];
 
-// Smallest-to-largest fallback chain; the <img> fallback uses jpeg.
+// AVIF first (smallest), WebP as the universally-supported fallback. JPEG is
+// omitted: every browser that lacks both AVIF and WebP is long EOL.
 const FORMATS = [
   { ext: "avif", opts: { quality: 50 } },
   { ext: "webp", opts: { quality: 80 } },
-  { ext: "jpg", sharpFormat: "jpeg", opts: { quality: 80, mozjpeg: true } },
 ];
 
 const INPUT_RE = /\.(jpe?g|png|tiff?)$/i;

@@ -17,8 +17,7 @@
 <picture>
     <source type="image/avif" sizes="<%= sizes %>" srcset="<%= srcset.("avif") %>" />
     <source type="image/webp" sizes="<%= sizes %>" srcset="<%= srcset.("webp") %>" />
-    <source type="image/jpeg" sizes="<%= sizes %>" srcset="<%= srcset.("jpg") %>" />
-    <img src="/images/<%= name %>-<%= fallback_width %>.jpg"
+    <img src="/images/<%= name %>-<%= fallback_width %>.webp"
          width="<%= meta["width"] %>" height="<%= meta["height"] %>"
          loading="lazy" decoding="async" alt="<%= h(alt_text) %>" />
 </picture>
