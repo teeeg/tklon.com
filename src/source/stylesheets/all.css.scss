@@ -96,6 +96,11 @@ section:after {
   padding-top: var(--s4);
 }
 
+// the first title already sits under the body's top padding — don't stack a heading margin on it
+section:first-child > :first-child {
+  margin-top: 0;
+}
+
 header {
   margin-bottom: var(--s4);
   h1, h2, h3, h4, h5 {
