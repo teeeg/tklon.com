@@ -18,13 +18,13 @@ help: ## List available targets
 install: ## Install Ruby gems + npm deps
 	cd src && $(RUBYPATH) bundle install && npm install
 
-images: ## Generate responsive image variants from src/images/
+images: ## Regenerate responsive image variants from src/images/ (also run automatically by build/serve)
 	cd src && node scripts/build-images.mjs
 
-build: images ## Build the static site into src/build
+build: ## Build the static site into src/build
 	cd src && $(RUBYPATH) NO_CONTRACTS=true bundle exec middleman build
 
-serve: images ## Run the local dev server (http://localhost:4567)
+serve: ## Run the local dev server (http://localhost:4567)
 	cd src && $(RUBYPATH) bundle exec middleman server
 
 test: ## Run the JS (vitest) suite

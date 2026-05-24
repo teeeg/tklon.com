@@ -7,7 +7,8 @@
       :name => "speedbox-motor-exposed", :alt_text => "Exposed Bosch e-bike motor" })
 %>
 <%
-  meta = data.images[name]
+  images = data.respond_to?(:images) ? data.images : nil
+  meta = images && images[name]
   raise "Unknown image '#{name}' — run `make build` (scripts/build-images.mjs)" unless meta
   widths = meta["widths"]
   fallback_width = widths.include?(750) ? 750 : widths.max

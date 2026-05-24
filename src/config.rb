@@ -1,3 +1,13 @@
+# Generate responsive image variants + data/images.json before anything else, so
+# the manifest exists when templates render. This runs for `middleman build` and
+# `middleman server` alike, which means CI (which calls middleman directly) and
+# local `make` stay in sync — there is no way to build without it.
+unless $images_built # config.rb is evaluated more than once per build; only run the script once
+  image_script = File.expand_path("scripts/build-images.mjs", __dir__)
+  system("node", image_script) or raise "image generation failed (#{image_script})"
+  $images_built = true
+end
+
 ###
 # Page options, layouts, aliases and proxies
 ###
