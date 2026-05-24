@@ -33,6 +33,11 @@
   --font: "Hanken Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+// animated page-to-page transitions (progressive enhancement; ignored where unsupported)
+@view-transition {
+  navigation: auto;
+}
+
 html {
   font-size: 18px;
   font-family: var(--font);
@@ -54,6 +59,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2;
   font-weight: 700;
   margin: var(--s4) 0 var(--s2);
+  text-wrap: balance;
   & > span {
     font-size: 8px;
   }
@@ -67,6 +73,7 @@ h5 { font-size: 1rem; }
 
 p {
   margin: 0 0 var(--s3);
+  text-wrap: pretty;
 }
 
 a {
