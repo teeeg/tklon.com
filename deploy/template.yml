@@ -24,6 +24,11 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub ${Route53HostZoneName}-assets
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
   WebsiteStaticAssetsBucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -279,6 +284,12 @@ Resources:
 
   BuildPipelineBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
 
   BuildDeployPipeline:
     Type: AWS::CodePipeline::Pipeline
