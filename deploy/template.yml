@@ -113,11 +113,22 @@ Resources:
       Name: !Sub "${AWS::StackName}-path-rewrite"
       AutoPublish: true
       FunctionConfig:
-        Comment: Append index.html to directory-style request URIs
+        Comment: Redirect www→apex and append index.html to directory URIs
         Runtime: cloudfront-js-2.0
-      FunctionCode: |
+      # !Sub interpolates the apex domain so this function stays generic across
+      # stacks. The www→apex 301 collapses the two hostnames into one canonical
+      # origin (better cache hit rate, single set of SEO signals).
+      FunctionCode: !Sub |
         function handler(event) {
           var request = event.request;
+          var host = request.headers.host && request.headers.host.value;
+          if (host === 'www.${Route53HostZoneName}') {
+            return {
+              statusCode: 301,
+              statusDescription: 'Moved Permanently',
+              headers: { location: { value: 'https://${Route53HostZoneName}' + request.uri } }
+            };
+          }
           request.uri = request.uri.replace(/\/$/, '/index.html');
           return request;
         }
