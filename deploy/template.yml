@@ -73,8 +73,11 @@ Resources:
         PriceClass: PriceClass_100
         DefaultCacheBehavior:
           Compress: true
-          ForwardedValues:
-            QueryString: true
+          # AWS-managed "CachingOptimized" policy: caches on URL only (ignores
+          # query string + cookies), so tracking params like ?utm_source=… don't
+          # shred the cache hit rate. Replaces the legacy ForwardedValues block.
+          # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
           TargetOriginId: !Ref WebsiteStaticAssetsBucket
           ViewerProtocolPolicy: redirect-to-https
           FunctionAssociations:
