@@ -101,6 +101,21 @@ video {
   height: auto; /* preserve aspect ratio from the width/height attributes */
 }
 
+// Inline SVG charts (e.g. the yogurt temp curve). Without an explicit width,
+// browsers default to a 300×150 box; fill the column instead and let the
+// viewBox handle aspect. Bump label size on narrow viewports — at body-width
+// 600px the chart renders ~1:1 with its viewBox so 11px is fine, but a 360px
+// phone column scales everything ~0.6× and labels drop below readable.
+svg.chart {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto var(--s3);
+}
+@media (max-width: 600px) {
+  svg.chart text { font-size: 18px; }
+}
+
 figure {
   margin: 0 0 var(--s3); /* drop browser-default 40px side margins */
 }
