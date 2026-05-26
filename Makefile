@@ -9,14 +9,17 @@ TEMPLATE := deploy/template.yml
 RUBYPATH := PATH="$$HOME/.rbenv/shims:$$PATH"
 
 .DEFAULT_GOAL := help
-.PHONY: help install images video video-prune build serve test infra publish deploy
+.PHONY: help install install-hooks images video video-prune check-videos build serve test infra publish deploy
 
 help: ## List available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
-	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-9s\033[0m %s\n", $$1, $$2}'
+	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-13s\033[0m %s\n", $$1, $$2}'
 
-install: ## Install Ruby gems + npm deps
+install: install-hooks ## Install Ruby gems + npm deps (and git hooks)
 	cd src && $(RUBYPATH) bundle install && npm install
+
+install-hooks: ## Point git at .githooks/ so pre-push runs check-videos
+	git config core.hooksPath .githooks
 
 images: ## Regenerate responsive image variants from src/images/ (also run automatically by build/serve)
 	cd src && node scripts/build-images.mjs
@@ -26,6 +29,9 @@ video: ## Encode + upload a self-hosted video (manual; needs ffmpeg). Usage: mak
 
 video-prune: ## Delete /media/ objects on S3 not referenced by data/videos.json (opt-in GC)
 	cd src && node scripts/build-videos.mjs --prune
+
+check-videos: ## Verify every src/videos/ source is reflected in data/videos.json (run by pre-push)
+	@cd src && node scripts/check-videos.mjs
 
 build: ## Build the static site into src/build
 	cd src && $(RUBYPATH) NO_CONTRACTS=true bundle exec middleman build
