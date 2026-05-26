@@ -49,15 +49,23 @@ infra: ## Deploy/update the CloudFormation stack
 	  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
 	  --region $(REGION)
 
-publish: build ## Build, sync to S3, and invalidate CloudFront (content deploy)
+publish: build ## Build, sync to S3 with cache headers, invalidate HTML on CloudFront
 	@bucket=$$(aws cloudformation describe-stack-resource --stack-name $(STACK) \
 	  --logical-resource-id WebsiteStaticAssetsBucket \
 	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)); \
 	dist=$$(aws cloudformation describe-stack-resource --stack-name $(STACK) \
 	  --logical-resource-id CloudfrontDistribution \
 	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)); \
-	echo "→ syncing src/build to s3://$$bucket, then invalidating $$dist"; \
-	aws s3 sync src/build/ "s3://$$bucket" --delete --exclude 'media/*'; \
-	aws cloudfront create-invalidation --distribution-id "$$dist" --paths '/*'
+	echo "→ syncing hashed/immutable assets to s3://$$bucket"; \
+	aws s3 sync src/build/ "s3://$$bucket" --delete --exclude 'media/*' \
+	  --exclude '*.html' --exclude '*.xml' --exclude '*.txt' \
+	  --cache-control 'public,max-age=31536000,immutable'; \
+	echo "→ syncing HTML / feeds (short TTL with stale-while-revalidate)"; \
+	aws s3 sync src/build/ "s3://$$bucket" --delete --exclude '*' \
+	  --include '*.html' --include '*.xml' --include '*.txt' \
+	  --cache-control 'public,max-age=60,s-maxage=300,stale-while-revalidate=86400'; \
+	echo "→ invalidating $$dist (HTML/feeds only — hashed assets self-bust)"; \
+	aws cloudfront create-invalidation --distribution-id "$$dist" \
+	  --paths '/*.html' '/*.xml' '/*.txt'
 
 deploy: infra publish ## Full deploy: stack update, then content
