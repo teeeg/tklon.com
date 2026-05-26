@@ -26,18 +26,14 @@ import { createHash } from "node:crypto";
 import { readdir, mkdir, readFile, writeFile, rename } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const SRC_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const VIDEO_DIR = path.join(SRC_ROOT, "videos");
+import { SRC_ROOT, VIDEO_DIR, MANIFEST, INPUT_RE, nameOf, hashSource } from "./_videos-shared.mjs";
+
 const OUT_DIR = path.join(VIDEO_DIR, ".out");
 const POSTER_DIR = path.join(SRC_ROOT, "images");
-const MANIFEST = path.join(SRC_ROOT, "data", "videos.json");
 
 const BUCKET = "tklon.com-assets";
 const MEDIA_PREFIX = "media/";
-
-const INPUT_RE = /\.(mov|mp4|m4v|mkv|webm)$/i;
 
 // Bound BOTH dimensions so a tall/4K vertical clip can't balloon past 1080p in its long
 // edge; decrease keeps aspect ratio; divisible_by=2 keeps dims even for yuv420p/H.264.
@@ -67,12 +63,23 @@ async function readManifest() {
 }
 
 async function processOne(file) {
-  const name = file.replace(INPUT_RE, "");
+  const name = nameOf(file);
   const input = path.join(VIDEO_DIR, file);
 
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(POSTER_DIR, { recursive: true });
   await mkdir(path.dirname(MANIFEST), { recursive: true });
+
+  // 0. Short-circuit if the source's content matches what the manifest was last
+  // encoded from. ffmpeg/aws are both expensive enough that running `make video`
+  // on a clean tree shouldn't re-do work; this also makes the pipeline safe to
+  // invoke defensively (e.g. from a pre-push hook).
+  const sourceHash = await hashSource(input);
+  const existing = (await readManifest())[name];
+  if (existing?.sourceHash === sourceHash) {
+    console.log(`✓ ${name}  (unchanged — skipping encode/upload)`);
+    return;
+  }
 
   // 1. Encode to a temp name; rename once we know the content hash.
   const tmp = path.join(OUT_DIR, `${name}.tmp.mp4`);
@@ -120,7 +127,7 @@ async function processOne(file) {
   // 6. Record in the committed manifest only after a successful upload. Read-modify-write
   // a single key and write back sorted to keep diffs/merge conflicts minimal.
   const manifest = await readManifest();
-  manifest[name] = { src: finalName, width, height, duration, poster };
+  manifest[name] = { src: finalName, width, height, duration, poster, sourceHash };
   const sorted = {};
   for (const k of Object.keys(manifest).sort()) sorted[k] = manifest[k];
   await writeFile(MANIFEST, JSON.stringify(sorted, null, 2) + "\n");
