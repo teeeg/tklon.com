@@ -2,3 +2,35 @@
 .center {
   text-align: center;
 }
+
+// keep content in the accessibility tree while hiding it visually (page h1s
+// on pages where the design doesn't show a title, etc.). Standard pattern.
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// skip-to-content link: hidden until focused, then visible at top-left
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--s2);
+  z-index: 100;
+  background: var(--bg);
+  color: var(--accent);
+  padding: var(--s1) var(--s2);
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  text-decoration: underline;
+
+  &:focus {
+    top: var(--s2);
+  }
+}

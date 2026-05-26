@@ -16,9 +16,12 @@
 }
 
 // only animate filter changes after the initial on-load filter (set by JS adding .ready),
-// so the page doesn't visibly fade articles in/out on first paint
-.ready .Article {
-  transition: opacity 0.2s;
+// so the page doesn't visibly fade articles in/out on first paint. Disabled for users
+// who've opted out of motion.
+@media (prefers-reduced-motion: no-preference) {
+  .ready .Article {
+    transition: opacity 0.2s;
+  }
 }
 
 .hidden {

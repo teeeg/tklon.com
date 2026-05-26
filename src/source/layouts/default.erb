@@ -23,6 +23,9 @@
   </head>
 
   <body class="<%= page_classes %>">
-    <%= yield %>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <main id="main">
+      <%= yield %>
+    </main>
   </body>
 </html>
