@@ -37,18 +37,28 @@ Resources:
       PolicyDocument:
         Version: 2012-10-17
         Statement:
-          - Action:
-              - "s3:GetObject"
+          # Origin Access Control: only this exact CloudFront distribution can
+          # read the bucket. Authorisation is by service principal + SourceArn
+          # rather than the legacy OAI canonical user, and S3 requests are
+          # signed with SigV4.
+          - Action: "s3:GetObject"
             Effect: Allow
             Principal:
-              CanonicalUser: !GetAtt CloudfrontOriginAccessIdentity.S3CanonicalUserId
+              Service: cloudfront.amazonaws.com
             Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontDistribution}"
 
-  CloudfrontOriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+  WebsiteOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
     Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: !Sub "CloudFront OAI for ${Route53HostZoneName}"
+      OriginAccessControlConfig:
+        Name: !Sub "${AWS::StackName}-s3-oac"
+        Description: !Sub "OAC for ${Route53HostZoneName} S3 origin"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
 
   CloudfrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -66,10 +76,14 @@ Resources:
         HttpVersion: http2and3
         IPV6Enabled: true
         Origins:
-          - DomainName: !GetAtt WebsiteStaticAssetsBucket.DomainName
+          # RegionalDomainName (not DomainName) is required with OAC — the
+          # legacy global endpoint can fail SigV4 verification for buckets
+          # created outside us-east-1.
+          - DomainName: !GetAtt WebsiteStaticAssetsBucket.RegionalDomainName
             Id: !Ref WebsiteStaticAssetsBucket
+            OriginAccessControlId: !GetAtt WebsiteOriginAccessControl.Id
             S3OriginConfig:
-              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudfrontOriginAccessIdentity}"
+              OriginAccessIdentity: ""
         PriceClass: PriceClass_100
         DefaultCacheBehavior:
           Compress: true
