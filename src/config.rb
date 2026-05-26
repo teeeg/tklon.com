@@ -73,9 +73,9 @@ end
 
 # Build-specific configuration
 configure :build do
-  # expire cached assets on update. responsive image variants keep stable names
-  # (scripts/build-images.mjs) and are cache-busted by the CloudFront
-  # invalidation in `make publish`, so leave them un-hashed.
+  # expire cached assets on update. responsive image variants are content-hashed
+  # by scripts/build-images.mjs (filename embeds the hash), so they don't need
+  # Middleman's asset_hash on top — ignore the images/ tree.
   activate :asset_hash, ignore: [%r{images/}]
   activate :minify_css
   activate :minify_html

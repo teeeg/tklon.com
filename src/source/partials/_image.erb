@@ -12,15 +12,16 @@
   meta = images && images[name]
   raise "Unknown image '#{name}' — run `make build` (scripts/build-images.mjs)" unless meta
   widths = meta["widths"]
+  digest = meta["digest"]
   fallback_width = widths.include?(750) ? 750 : widths.max
-  srcset = ->(ext) { widths.map { |w| "/images/#{name}-#{w}.#{ext} #{w}w" }.join(", ") }
+  srcset = ->(ext) { widths.map { |w| "/images/#{name}-#{w}-#{digest}.#{ext} #{w}w" }.join(", ") }
   sizes = "(min-width: 750px) 750px, 100vw"
 %>
 <figure>
     <picture>
         <source type="image/avif" sizes="<%= sizes %>" srcset="<%= srcset.("avif") %>" />
         <source type="image/webp" sizes="<%= sizes %>" srcset="<%= srcset.("webp") %>" />
-        <img src="/images/<%= name %>-<%= fallback_width %>.webp"
+        <img src="/images/<%= name %>-<%= fallback_width %>-<%= digest %>.webp"
              width="<%= meta["width"] %>" height="<%= meta["height"] %>"
              loading="lazy" decoding="async" alt="<%= h(alt_text) %>" />
     </picture>

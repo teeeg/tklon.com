@@ -12,7 +12,8 @@
 // (see .gitignore) — they are rebuilt on every `make build`.
 
 import sharp from "sharp";
-import { readdir, mkdir, rm, writeFile } from "node:fs/promises";
+import { readdir, readFile, mkdir, rm, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -54,10 +55,17 @@ async function main() {
     const name = file.replace(INPUT_RE, "");
     const input = path.join(SOURCE_DIR, file);
 
+    // Read the source once and hash it: variant filenames embed this digest so
+    // the CDN can serve them as immutable (`Cache-Control: max-age=31536000`)
+    // and a source edit invalidates the URL automatically. 8 hex chars of
+    // sha256 is ~32 bits — ample for the handful of variants per image.
+    const buffer = await readFile(input);
+    const digest = createHash("sha256").update(buffer).digest("hex").slice(0, 8);
+
     // metadata().width/height are the raw header dims and ignore EXIF
     // orientation; meta.autoOrient holds the corrected dims that match what
     // .rotate() produces in the output variants below.
-    const meta = await sharp(input).metadata();
+    const meta = await sharp(buffer).metadata();
     const { width: nativeWidth, height: nativeHeight } = meta.autoOrient ?? meta;
 
     // Never upscale: cap the requested widths at the native width.
@@ -65,9 +73,9 @@ async function main() {
     if (widths.length === 0) widths = [nativeWidth];
 
     for (const width of widths) {
-      const pipeline = sharp(input).rotate().resize({ width, withoutEnlargement: true });
+      const pipeline = sharp(buffer).rotate().resize({ width, withoutEnlargement: true });
       for (const fmt of FORMATS) {
-        const out = path.join(OUT_DIR, `${name}-${width}.${fmt.ext}`);
+        const out = path.join(OUT_DIR, `${name}-${width}-${digest}.${fmt.ext}`);
         await pipeline
           .clone()
           .toFormat(fmt.sharpFormat ?? fmt.ext, fmt.opts)
@@ -79,8 +87,9 @@ async function main() {
       width: nativeWidth,
       height: nativeHeight,
       widths,
+      digest,
     };
-    console.log(`✓ ${name}  (${nativeWidth}×${nativeHeight}) → ${widths.join(", ")} px`);
+    console.log(`✓ ${name}  (${nativeWidth}×${nativeHeight}) → ${widths.join(", ")} px  [${digest}]`);
   }
 
   await writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
