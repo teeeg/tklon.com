@@ -9,7 +9,7 @@ TEMPLATE := deploy/template.yml
 RUBYPATH := PATH="$$HOME/.rbenv/shims:$$PATH"
 
 .DEFAULT_GOAL := help
-.PHONY: help install images build serve test infra publish deploy
+.PHONY: help install images video video-prune build serve test infra publish deploy
 
 help: ## List available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -20,6 +20,12 @@ install: ## Install Ruby gems + npm deps
 
 images: ## Regenerate responsive image variants from src/images/ (also run automatically by build/serve)
 	cd src && node scripts/build-images.mjs
+
+video: ## Encode + upload a self-hosted video (manual; needs ffmpeg). Usage: make video SRC=src/videos/foo.mov
+	cd src && node scripts/build-videos.mjs $(SRC)
+
+video-prune: ## Delete /media/ objects on S3 not referenced by data/videos.json (opt-in GC)
+	cd src && node scripts/build-videos.mjs --prune
 
 build: ## Build the static site into src/build
 	cd src && $(RUBYPATH) NO_CONTRACTS=true bundle exec middleman build
@@ -45,7 +51,7 @@ publish: build ## Build, sync to S3, and invalidate CloudFront (content deploy)
 	  --logical-resource-id CloudfrontDistribution \
 	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)); \
 	echo "→ syncing src/build to s3://$$bucket, then invalidating $$dist"; \
-	aws s3 sync src/build/ "s3://$$bucket" --delete; \
+	aws s3 sync src/build/ "s3://$$bucket" --delete --exclude 'media/*'; \
 	aws cloudfront create-invalidation --distribution-id "$$dist" --paths '/*'
 
 deploy: infra publish ## Full deploy: stack update, then content

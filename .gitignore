@@ -11,3 +11,7 @@
 # generated responsive image variants + manifest (rebuilt from src/images/)
 src/source/images/
 src/data/images.json
+
+# self-hosted video sources + local encode output (the encoded MP4 lives on S3,
+# data/videos.json is committed so CI can render without the source or ffmpeg)
+src/videos/

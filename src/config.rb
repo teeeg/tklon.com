@@ -45,9 +45,29 @@ end
 # Methods defined in the helpers block are available in templates
 helpers do
   # Render a responsive <picture> for an image in src/images/. `name` is the
-  # original's basename without extension; see partials/_image.erb.
-  def responsive_image(name, alt_text)
-    partial("partials/image", locals: { name: name, alt_text: alt_text })
+  # original's basename without extension. At least one of `alt:` or `caption:`
+  # is required: alt is for screen readers (substitutes for the image), caption
+  # renders visibly under it. When only `caption:` is given, alt becomes ""
+  # (per WCAG: a visible caption already describes the image, so duplicating it
+  # into alt makes a screen reader announce it twice). See partials/_image.erb.
+  def responsive_image(name, alt: nil, caption: nil)
+    if alt.nil?
+      raise "responsive_image #{name.inspect} needs alt: or caption: (use alt: '' for decorative)" if caption.nil?
+      alt = ""
+    end
+    partial("partials/image", locals: { name: name, alt_text: alt, caption: caption })
+  end
+
+  # Render a self-hosted <video> for a clip in src/videos/. `name` is the source
+  # basename; dimensions, poster and the (content-hashed) filename come from
+  # data/videos.json, written by scripts/build-videos.mjs. See partials/_video.erb.
+  def responsive_video(name, caption = nil)
+    partial("partials/video", locals: { name: name, caption: caption })
+  end
+
+  # Embed an external player (YouTube, Vimeo, …) by iframe URL. See partials/_embed.erb.
+  def embed(href, title)
+    partial("partials/embed", locals: { href: href, title: title })
   end
 end
 

@@ -1,5 +1,21 @@
-
-<div class="video">
-	<iframe width="560" height="315" src="<%= href %>" title="<%= h(title) %>" frameborder="0" allowfullscreen></iframe>
-	<%= link_to title, href %>
-</div>
+<%#
+  Self-hosted video partial. Pass :name (the source basename in src/videos/) and
+  an optional :caption. Dimensions, poster and the content-hashed filename come
+  from data/videos.json, written by scripts/build-videos.mjs (run via `make
+  video`). The encoded MP4 lives on S3 under /media/, not in this repo. Prefer the
+  responsive_video helper, e.g. in a post:
+    responsive_video "surf", "Sunset session at Pleasure Point"
+%>
+<%
+  videos = data.respond_to?(:videos) ? data.videos : nil
+  meta = videos && videos[name]
+  raise "Unknown video '#{name}' — run `make video` (scripts/build-videos.mjs)" unless meta
+%>
+<figure class="video">
+    <video controls playsinline preload="none"
+           width="<%= meta["width"] %>" height="<%= meta["height"] %>"
+           poster="/images/<%= meta["poster"] %>-750.webp">
+        <source src="/media/<%= meta["src"] %>" type="video/mp4" />
+    </video>
+    <% if defined?(caption) && caption %><figcaption><%= h(caption) %></figcaption><% end %>
+</figure>

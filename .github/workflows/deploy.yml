@@ -47,5 +47,7 @@ jobs:
 
       - name: Sync to S3 and invalidate CloudFront
         run: |
-          aws s3 sync build/ s3://tklon.com-assets --delete
+          # --exclude 'media/*': self-hosted videos are uploaded out-of-band by
+          # `make video` and never live in build/; without this they'd be deleted.
+          aws s3 sync build/ s3://tklon.com-assets --delete --exclude 'media/*'
           aws cloudfront create-invalidation --distribution-id E12C54H3GMYHN0 --paths '/*'
