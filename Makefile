@@ -16,7 +16,7 @@ PACKAGED_TEMPLATE := deploy/template.packaged.yml
 RUBYPATH := PATH="$$HOME/.rbenv/shims:$$PATH"
 
 .DEFAULT_GOAL := help
-.PHONY: help install install-hooks images video video-prune check-videos build serve test infra publish deploy stats
+.PHONY: help install install-hooks images video video-prune check-videos build serve test fmt infra publish deploy stats
 
 help: ## List available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -48,6 +48,11 @@ serve: ## Run the local dev server (http://localhost:4567)
 
 test: ## Run the JS (vitest) suite
 	cd src && npm test
+
+fmt: ## Format Python (ruff) and TypeScript/JS (prettier)
+	@command -v uvx >/dev/null || { echo "uv not installed — see make stats for install hint"; exit 1; }
+	uvx ruff format deploy/lambda/
+	cd src && npx prettier --write 'source/**/*.ts' '*.config.{ts,js}' vitest.setup.ts
 
 infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
 	@aws s3api head-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) 2>/dev/null \
