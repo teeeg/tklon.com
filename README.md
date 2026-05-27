@@ -9,8 +9,10 @@ tklon.com
 ├── .github/workflows/deploy.yml --> builds + deploys on push to master
 ├── Makefile --> deploy + local dev shortcuts
 ├── deploy
-│   └── template.yml --> CloudFormation template (CDN, DNS aliases, CloudFront function, deploy role)
-└── src --> source content middleman builds into static assets
+│   ├── lambda/ --> stats report Lambda
+│   ├── params.yml --> per-deployment values
+│   └── template.yml --> CloudFormation template
+└── src --> source blog content
 ```
 
 ## Deploying
