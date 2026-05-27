@@ -35,6 +35,8 @@ import urllib.parse
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 
+import boto3
+
 # --- Config -----------------------------------------------------------------
 
 LOGS_BUCKET    = os.environ.get("LOGS_BUCKET")
@@ -265,7 +267,6 @@ def parse_window(s):
 
 def lambda_handler(event, context):
     """EventBridge → Lambda. Last 7d → SNS email + S3 archive."""
-    import boto3
     s3 = boto3.client("s3")
     sns = boto3.client("sns")
 
@@ -295,7 +296,6 @@ def lambda_handler(event, context):
 
 def cli(argv):
     """`make stats` entry point. Window is parsed, raw logs and/or weekly aggregates are stitched."""
-    import boto3
     p = argparse.ArgumentParser()
     p.add_argument("--window", default="7d", help="Nd, Nw, Nmo, Ny, or 'all'")
     p.add_argument("--local", action="store_true", help="Required outside Lambda")
