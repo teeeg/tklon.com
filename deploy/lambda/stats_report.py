@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.13"
-# dependencies = ["boto3"]
+# dependencies = ["boto3[crt]"]
 # ///
 """
 Weekly stats report for tklon.com.
