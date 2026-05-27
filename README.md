@@ -27,12 +27,13 @@ With the `aws-cli` installed and authenticated (e.g. `aws login`):
 
 Stack name and region default to `tklondotcom` / `us-east-1`; override inline, e.g. `make infra STACK=foo REGION=us-west-2`.
 
-`template.yml` includes a few configurable parameters (all have defaults):
+Per-deployment values live in [`deploy/params.yml`](deploy/params.yml) (single source of truth). `make infra` reads it and passes values to CloudFormation; `template.yml` is the schema only and is not standalone-deployable without `--parameter-overrides`. Edit and re-run `make infra` to apply.
 
-- **AcmCertificateArn** to serve resources over HTTPS, your ACM certificate [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) associated with the Cloudfront distribution (must live in us-east-1)
-- **Route53HostZoneName** the top-level domain name of the Route53 hosted zone within which alias records will be created to route traffic to the Cloudfront distribution
-- **GitHubRepositoryOwner** the GitHub account or organization that owns the repository, e.g. teeeg (used to scope the deploy role to your repo)
-- **GitHubRepositoryName** the GitHub repository name, e.g. tklon.com
+- **AcmCertificateArn** ACM certificate [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) covering the apex + www subdomain (must live in us-east-1)
+- **Route53HostZoneName** Route 53 hosted zone where alias records to CloudFront are created
+- **GitHubRepositoryOwner** GitHub account or org that owns the repo (scopes the OIDC deploy role)
+- **GitHubRepositoryName** GitHub repository name (scopes the OIDC deploy role)
+- **StatsReportEmail** address that receives the weekly access-log summary; SNS emails a confirmation link on first create/update — click it to start delivery
 
 ## Local development
 
