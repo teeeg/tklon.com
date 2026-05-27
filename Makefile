@@ -13,7 +13,7 @@ PACKAGED_TEMPLATE := deploy/template.packaged.yml
 RUBYPATH := PATH="$$HOME/.rbenv/shims:$$PATH"
 
 .DEFAULT_GOAL := help
-.PHONY: help install install-hooks images video video-prune check-videos build serve test infra publish deploy
+.PHONY: help install install-hooks images video video-prune check-videos build serve test infra publish deploy stats
 
 help: ## List available targets
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -80,3 +80,13 @@ publish: build ## Build, sync to S3 with cache headers, invalidate HTML on Cloud
 	  --paths '/*.html' '/*.xml' '/*.txt'
 
 deploy: infra publish ## Full deploy: stack update, then content
+
+stats: ## Print access-log report. Override window: WINDOW=12w (default 7d). Units: Nd/Nw/Nmo/Ny/all
+	@LOGS_BUCKET=$$(aws cloudformation describe-stack-resource --stack-name $(STACK) \
+	  --logical-resource-id WebsiteLogsBucket \
+	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)) \
+	 STATS_BUCKET=$$(aws cloudformation describe-stack-resource --stack-name $(STACK) \
+	  --logical-resource-id WebsiteStatsBucket \
+	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)) \
+	 AWS_DEFAULT_REGION=$(REGION) \
+	 python3 deploy/lambda/stats_report.py --local --window $(or $(WINDOW),7d)
