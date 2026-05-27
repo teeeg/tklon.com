@@ -30,6 +30,28 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
+  # Raw CloudFront access logs land here. CF standard logging writes via an
+  # ACL grant to the awslogsdelivery group, which requires BucketOwnerPreferred
+  # (not the modern BucketOwnerEnforced default). Lifecycle expires raw logs
+  # after 90 days — headline numbers are preserved forever in the stats bucket.
+  WebsiteLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Route53HostZoneName}-logs
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerPreferred
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireRawLogsAfter90Days
+            Status: Enabled
+            ExpirationInDays: 90
+
   WebsiteStaticAssetsBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
