@@ -278,7 +278,7 @@ Resources:
       Description: Weekly access-log summary for tklon.com
       CodeUri: lambda/
       Handler: stats_report.lambda_handler
-      Runtime: python3.12
+      Runtime: python3.13
       Timeout: 120
       MemorySize: 256
       Environment:
