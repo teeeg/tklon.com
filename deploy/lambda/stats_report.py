@@ -318,8 +318,11 @@ def lambda_handler(event, context):
     s3 = boto3.client("s3")
     sns = boto3.client("sns")
 
+    # aggregate_raw_logs treats both endpoints as inclusive, so a 7-day window
+    # spans [end-6d, end] (7 calendar days). The prior 7-day window is the
+    # 7 days immediately before that.
     end = datetime.now(timezone.utc).date()
-    start = end - timedelta(days=7)
+    start = end - timedelta(days=6)
     cur  = ReportAggregate.from_window(aggregate_raw_logs(s3, start, end))
     prev = ReportAggregate.from_window(
         aggregate_raw_logs(s3, start - timedelta(days=7), start - timedelta(days=1))
@@ -376,7 +379,9 @@ def cli(argv):
         prev = None  # no comparison for long windows
     else:
         # Short window: raw logs only, with prior-period comparison.
-        start = end - window
+        # `+1`/`-1` compensate for aggregate_raw_logs' inclusive endpoints so
+        # both periods span exactly `window.days` calendar days.
+        start = end - window + timedelta(days=1)
         cur = ReportAggregate.from_window(aggregate_raw_logs(s3, start, end))
         prev_end = start - timedelta(days=1)
         prev_start = prev_end - window + timedelta(days=1)
