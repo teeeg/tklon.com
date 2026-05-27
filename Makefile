@@ -3,6 +3,10 @@
 STACK  ?= tklondotcom
 REGION ?= us-east-1
 TEMPLATE := deploy/template.yml
+# Holds zipped Lambda code uploaded by `cloudformation package`. Created
+# idempotently by `infra` — no manual bootstrap needed.
+ARTIFACTS_BUCKET ?= $(STACK)-cfn-artifacts
+PACKAGED_TEMPLATE := deploy/template.packaged.yml
 
 # Run gem/middleman via the project's pinned Ruby (src/.ruby-version),
 # even if rbenv isn't initialised in the calling shell.
@@ -42,9 +46,16 @@ serve: ## Run the local dev server (http://localhost:4567)
 test: ## Run the JS (vitest) suite
 	cd src && npm test
 
-infra: ## Deploy/update the CloudFormation stack
-	aws cloudformation deploy \
+infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
+	@aws s3api head-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) 2>/dev/null \
+	  || aws s3api create-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) >/dev/null
+	aws cloudformation package \
 	  --template-file $(TEMPLATE) \
+	  --s3-bucket $(ARTIFACTS_BUCKET) \
+	  --output-template-file $(PACKAGED_TEMPLATE) \
+	  --region $(REGION)
+	aws cloudformation deploy \
+	  --template-file $(PACKAGED_TEMPLATE) \
 	  --stack-name $(STACK) \
 	  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
 	  --region $(REGION)

@@ -56,6 +56,18 @@ Resources:
             Status: Enabled
             ExpirationInDays: 90
 
+  # Long-lived storage for weekly aggregate JSONs the stats Lambda emits.
+  # No lifecycle — files are tiny (<50 KB/week) and we want full history.
+  WebsiteStatsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ${Route53HostZoneName}-stats
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
   WebsiteStaticAssetsBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
@@ -253,6 +265,58 @@ Resources:
       TopicArn: !Ref StatsReportTopic
       Protocol: email
       Endpoint: !Ref StatsReportEmail
+
+  # Weekly stats Lambda. Reads the last 7 days of CloudFront access logs from
+  # WebsiteLogsBucket, publishes a plain-text summary to StatsReportTopic, and
+  # archives a per-week aggregate JSON to WebsiteStatsBucket. Code lives in
+  # deploy/lambda/stats_report.py and is the same module `make stats` invokes
+  # locally for ad-hoc reports — one source of truth for what's in the email.
+  StatsReportFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${AWS::StackName}-stats-report"
+      Description: Weekly access-log summary for tklon.com
+      CodeUri: lambda/
+      Handler: stats_report.lambda_handler
+      Runtime: python3.12
+      Timeout: 120
+      MemorySize: 256
+      Environment:
+        Variables:
+          LOGS_BUCKET: !Ref WebsiteLogsBucket
+          STATS_BUCKET: !Ref WebsiteStatsBucket
+          SNS_TOPIC_ARN: !Ref StatsReportTopic
+          SITE_URL: !Sub "https://${Route53HostZoneName}"
+      Policies:
+        - Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action: [s3:GetObject, s3:ListBucket]
+              Resource:
+                - !GetAtt WebsiteLogsBucket.Arn
+                - !Sub "${WebsiteLogsBucket.Arn}/*"
+            - Effect: Allow
+              Action: [s3:GetObject, s3:PutObject, s3:ListBucket]
+              Resource:
+                - !GetAtt WebsiteStatsBucket.Arn
+                - !Sub "${WebsiteStatsBucket.Arn}/*"
+            - Effect: Allow
+              Action: sns:Publish
+              Resource: !Ref StatsReportTopic
+      Events:
+        WeeklyReport:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 13 ? * MON *)
+            Description: Mondays 13:00 UTC (~8am ET)
+
+  # Declare the LogGroup explicitly so we control retention. Without this,
+  # Lambda auto-creates one with no expiration and logs accumulate forever.
+  StatsReportFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${AWS::StackName}-stats-report"
+      RetentionInDays: 30
 
 Outputs:
   GitHubActionsRoleArn:
