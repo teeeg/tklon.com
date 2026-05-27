@@ -32,7 +32,6 @@ import os
 import re
 import sys
 import urllib.parse
-import urllib.request
 from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 
@@ -52,9 +51,6 @@ BOT_UA = re.compile(
     r"telegrambot|pingdom|uptimerobot|ahrefsbot|semrush|mj12bot|duckduckbot)",
     re.IGNORECASE,
 )
-
-# Permalink format from src/config.rb: /posts/{title}-{day}{month}{year}/
-POST_URL = re.compile(r"/posts/([a-z0-9-]+)-(\d{2})(\d{2})(\d{4})/")
 
 # Friendly names for the busiest CloudFront edges. Anything not listed is
 # shown by its 3-letter IATA code.
@@ -212,29 +208,6 @@ def load_weekly_aggregates(s3, start_date, end_date):
             yield json.loads(body)
 
 
-# --- "Days since last post" nudge ------------------------------------------
-
-def fetch_last_post():
-    """Return ('/posts/slug-DDMMYYYY/', days_ago) by scraping the home page."""
-    try:
-        with urllib.request.urlopen(SITE_URL, timeout=10) as resp:
-            html = resp.read().decode("utf-8", errors="replace")
-    except Exception:
-        return (None, None)
-    latest = None
-    for m in POST_URL.finditer(html):
-        slug, dd, mm, yyyy = m.group(1), m.group(2), m.group(3), m.group(4)
-        try:
-            d = date(int(yyyy), int(mm), int(dd))
-        except ValueError:
-            continue
-        if latest is None or d > latest[1]:
-            latest = (m.group(0), d)
-    if not latest:
-        return (None, None)
-    return (latest[0], (date.today() - latest[1]).days)
-
-
 # --- Report formatting ------------------------------------------------------
 
 def _delta(cur, prev):
@@ -245,16 +218,11 @@ def _delta(cur, prev):
     return f"  ({sign}{pct:.0f}% vs prior)"
 
 
-def format_report(cur, prev, last_post, label):
+def format_report(cur, prev, label):
     """Build the plain-text report body."""
-    out = [f"tklon.com — {label}", ""]
-    permalink, days_since = last_post
-    if days_since is not None:
-        plural = "" if days_since == 1 else "s"
-        out += [f"📝 Days since last post: {days_since} day{plural}",
-                f"   Last published: {permalink}", ""]
-
-    out += [
+    out = [
+        f"tklon.com — {label}",
+        "",
         f"PAGEVIEWS    {cur['pageviews']:>5d}{_delta(cur['pageviews'], (prev or {}).get('pageviews', 0))}",
         f"VISITORS     {cur['visitors']:>5d}   (unique, approx)",
         f"BOT TRAFFIC  {cur['bot_requests']:>5d}   (filtered)",
@@ -307,7 +275,7 @@ def lambda_handler(event, context):
     prev = agg_to_json(aggregate_raw_logs(s3, start - timedelta(days=7), start - timedelta(days=1)))
 
     label = f"week ending {end.isoformat()}"
-    body = format_report(cur, prev, fetch_last_post(), label)
+    body = format_report(cur, prev, label)
 
     sns.publish(
         TopicArn=SNS_TOPIC_ARN,
@@ -356,7 +324,7 @@ def cli(argv):
         prev = agg_to_json(aggregate_raw_logs(s3, prev_start, prev_end))
 
     label = "all time" if window is None else f"last {args.window}"
-    print(format_report(cur, prev, fetch_last_post(), label))
+    print(format_report(cur, prev, label))
 
 
 if __name__ == "__main__":
