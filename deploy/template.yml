@@ -18,6 +18,10 @@ Parameters:
   GitHubRepositoryName:
     Type: String
     Default: tklon.com
+  StatsReportEmail:
+    Type: String
+    Default: tommyklon@gmail.com
+    Description: Address that receives the weekly stats email. SNS sends a one-time confirmation link on stack create/update — click it to start delivery.
 
 Resources:
   WebsiteStaticAssetsBucket:
@@ -234,7 +238,26 @@ Resources:
                 Action: cloudfront:CreateInvalidation
                 Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontDistribution}"
 
+  # Email channel for the weekly stats report. Subscribing by email requires
+  # the recipient to confirm via a link AWS sends on subscription creation —
+  # the topic won't deliver until that's clicked once.
+  StatsReportTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${AWS::StackName}-stats-report"
+      DisplayName: tklon stats
+
+  StatsReportSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref StatsReportTopic
+      Protocol: email
+      Endpoint: !Ref StatsReportEmail
+
 Outputs:
   GitHubActionsRoleArn:
     Description: Role assumed by the GitHub Actions deploy workflow via OIDC
     Value: !GetAtt GitHubActionsDeployRole.Arn
+  StatsReportTopicArn:
+    Description: SNS topic that emits the weekly stats report
+    Value: !Ref StatsReportTopic
