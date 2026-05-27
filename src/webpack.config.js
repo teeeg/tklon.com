@@ -1,25 +1,25 @@
-const path = require('path');
+const path = require("path");
 
 module.exports = {
-    entry: {
-        tags: "./source/typescripts/tags.ts"
-    },
-    module: {
-        rules: [
-            {
-                test: /\.ts$/,
-                use: 'ts-loader',
-                exclude: /node_modules/,
-            },
-        ],
-    },
+  entry: {
+    tags: "./source/typescripts/tags.ts",
+  },
+  module: {
+    rules: [
+      {
+        test: /\.ts$/,
+        use: "ts-loader",
+        exclude: /node_modules/,
+      },
+    ],
+  },
 
-    resolve: {
-        extensions: [".ts", ".js"]
-    },
+  resolve: {
+    extensions: [".ts", ".js"],
+  },
 
-    output: {
-        filename: '[name].js',
-        path: path.resolve(__dirname, '.tmp/javascripts/'),
-    },
+  output: {
+    filename: "[name].js",
+    path: path.resolve(__dirname, ".tmp/javascripts/"),
+  },
 };

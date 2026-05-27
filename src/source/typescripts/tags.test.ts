@@ -26,18 +26,18 @@ function render(): void {
     makeTag("film"),
     makeArticle("Book post", ["books"]),
     makeArticle("Film post", ["film"]),
-    makeArticle("Both post", ["books", "film"])
+    makeArticle("Both post", ["books", "film"]),
   );
 }
 
 const tag = (name: string) =>
   Array.from(document.getElementsByClassName("Tag")).find(
-    el => el.textContent?.trim() === name
+    (el) => el.textContent?.trim() === name,
   ) as HTMLElement;
 
 const article = (text: string) =>
-  Array.from(document.getElementsByClassName("Article")).find(
-    el => el.textContent?.includes(text)
+  Array.from(document.getElementsByClassName("Article")).find((el) =>
+    el.textContent?.includes(text),
   ) as HTMLElement;
 
 const isFaded = (text: string) => article(text).classList.contains("hidden");
@@ -91,7 +91,7 @@ describe("tag filtering", () => {
     document.body.replaceChildren(
       makeTag("c++"),
       makeArticle("Cpp post", ["c++"]),
-      makeArticle("Other post", ["books"])
+      makeArticle("Other post", ["books"]),
     );
     document.dispatchEvent(new Event("DOMContentLoaded"));
 

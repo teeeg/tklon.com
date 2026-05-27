@@ -6,7 +6,10 @@ function tagName(element: HTMLElement): string {
   return (element.textContent || "").trim();
 }
 
-function toggleTagInQuery(query: URLSearchParams, name: string): URLSearchParams {
+function toggleTagInQuery(
+  query: URLSearchParams,
+  name: string,
+): URLSearchParams {
   if (query.has(name)) query.delete(name);
   else query.set(name, "");
   return query;
@@ -14,31 +17,36 @@ function toggleTagInQuery(query: URLSearchParams, name: string): URLSearchParams
 
 function toggleTag(event: Event, target: HTMLElement): void {
   event.preventDefault();
-  const query = toggleTagInQuery(new URLSearchParams(location.search), tagName(target));
+  const query = toggleTagInQuery(
+    new URLSearchParams(location.search),
+    tagName(target),
+  );
   const baseUrl = `${location.protocol}//${location.host}${location.pathname}?`;
   window.history.replaceState({}, "", baseUrl + query.toString());
   updateView(query);
 }
 
 function highlightArticles(query: URLSearchParams): void {
-  const tags = Array.from(query.keys()).map(tag => tag.trim());
+  const tags = Array.from(query.keys()).map((tag) => tag.trim());
 
-  // Fade any article that is missing at least one selected tag.
   if (tags.length) {
-    const stale = tags.map(tag => `.${ArticleClass}:not(.${CSS.escape(tag)})`).join(",");
-    Array.from(document.querySelectorAll<HTMLElement>(stale)).forEach(el =>
-      el.classList.add(HiddenClass)
+    const stale = tags
+      .map((tag) => `.${ArticleClass}:not(.${CSS.escape(tag)})`)
+      .join(",");
+    Array.from(document.querySelectorAll<HTMLElement>(stale)).forEach((el) =>
+      el.classList.add(HiddenClass),
     );
   }
 
-  // Un-fade the articles that match every selected tag.
-  const matching = document.getElementsByClassName([ArticleClass, ...tags].join(" "));
-  Array.from(matching).forEach(el => el.classList.remove(HiddenClass));
+  const matching = document.getElementsByClassName(
+    [ArticleClass, ...tags].join(" "),
+  );
+  Array.from(matching).forEach((el) => el.classList.remove(HiddenClass));
 }
 
 function highlightTags(query: URLSearchParams): void {
-  Array.from(document.getElementsByClassName(TagClass)).forEach(el =>
-    highlightTag(query, el as HTMLElement)
+  Array.from(document.getElementsByClassName(TagClass)).forEach((el) =>
+    highlightTag(query, el as HTMLElement),
   );
 }
 
@@ -53,9 +61,9 @@ function updateView(query: URLSearchParams): void {
 
 function init(): void {
   const query = new URLSearchParams(location.search);
-  Array.from(document.getElementsByClassName(TagClass)).forEach(el => {
+  Array.from(document.getElementsByClassName(TagClass)).forEach((el) => {
     const tag = el as HTMLElement;
-    tag.addEventListener("click", event => toggleTag(event, tag));
+    tag.addEventListener("click", (event) => toggleTag(event, tag));
     highlightTag(query, tag);
   });
   highlightArticles(query);

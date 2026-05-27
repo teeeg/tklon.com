@@ -3,7 +3,10 @@
 // test environment. Polyfill it with the spec algorithm so tests exercise the
 // same escaping as production.
 // https://drafts.csswg.org/cssom/#serialize-an-identifier
-if (typeof globalThis.CSS === "undefined" || typeof globalThis.CSS.escape !== "function") {
+if (
+  typeof globalThis.CSS === "undefined" ||
+  typeof globalThis.CSS.escape !== "function"
+) {
   const cssEscape = (value: string): string => {
     const string = String(value);
     const length = string.length;
@@ -44,5 +47,8 @@ if (typeof globalThis.CSS === "undefined" || typeof globalThis.CSS.escape !== "f
     return result;
   };
 
-  globalThis.CSS = { ...(globalThis.CSS || {}), escape: cssEscape } as typeof globalThis.CSS;
+  globalThis.CSS = {
+    ...(globalThis.CSS || {}),
+    escape: cssEscape,
+  } as typeof globalThis.CSS;
 }
