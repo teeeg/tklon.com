@@ -3,21 +3,35 @@
   <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1" name="viewport">
-    <% page_title = current_page.data.title || "tklon.com" %>
-    <% description = current_page.data.description || "tklon.com — a personal blog." %>
-    <% canonical = "https://tklon.com#{current_page.url}" %>
+    <%
+      raw_title = current_page.data.title
+      display_title = raw_title ? "#{raw_title} — tklon.com" : "tklon.com — personal blog"
+      og_title = raw_title || "tklon.com"
 
-    <title><%= h(page_title) %></title>
+      description = current_page.data.description
+      if description.nil? && current_page.respond_to?(:summary) && current_page.summary
+        text = current_page.summary.to_s
+                  .sub(/\A\s*<h[1-6][^>]*>.*?<\/h[1-6]>\s*/m, "")
+                  .gsub(/<[^>]+>/, " ").gsub(/\s+/, " ").strip
+        description = text.length > 155 ? text[0, 152].rstrip + "…" : text unless text.empty?
+      end
+      description ||= "Personal blog: cooking, bikes, books, film, travel."
+
+      canonical = "https://tklon.com#{current_page.url}"
+      is_article = current_page.respond_to?(:summary) && raw_title
+    %>
+
+    <title><%= h(display_title) %></title>
     <meta name="description" content="<%= h(description) %>">
     <link rel="canonical" href="<%= h(canonical) %>">
 
-    <meta property="og:title" content="<%= h(page_title) %>">
+    <meta property="og:title" content="<%= h(og_title) %>">
     <meta property="og:description" content="<%= h(description) %>">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="<%= is_article ? 'article' : 'website' %>">
     <meta property="og:url" content="<%= h(canonical) %>">
     <meta property="og:site_name" content="tklon.com">
     <meta name="twitter:card" content="summary">
-    
+
     <link rel="preload" href="/fonts/hanken-grotesk.woff2" as="font" type="font/woff2" crossorigin>
     <%= stylesheet_link_tag :all %>
   </head>
