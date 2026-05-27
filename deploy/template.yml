@@ -266,8 +266,9 @@ Resources:
       Protocol: email
       Endpoint: !Ref StatsReportEmail
 
-  # Weekly stats Lambda. Reads the last 7 days of CloudFront access logs from
-  # WebsiteLogsBucket, publishes a plain-text summary to StatsReportTopic, and
+  # Weekly stats Lambda. Reads the last 14 days of CloudFront access logs
+  # from WebsiteLogsBucket (current 7-day window plus the prior 7 for the
+  # vs-prior delta), publishes a plain-text summary to StatsReportTopic, and
   # archives a per-week aggregate JSON to WebsiteStatsBucket. Code lives in
   # deploy/lambda/stats_report.py and is the same module `make stats` invokes
   # locally for ad-hoc reports — one source of truth for what's in the email.
