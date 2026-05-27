@@ -334,7 +334,11 @@ def lambda_handler(event, context):
         Message=body,
     )
 
-    iso_year, iso_week, _ = end.isocalendar()
+    # Key by the ISO week that the data covers (start..end-1d) — not the week
+    # the Lambda runs in. The cron fires Monday for the prior 7 days, so most
+    # of the data lives in `start`'s ISO week; using `end.isocalendar()` would
+    # file it under the new week that's only just begun.
+    iso_year, iso_week, _ = start.isocalendar()
     key = f"weekly/{iso_year}-W{iso_week:02d}.json"
     s3.put_object(
         Bucket=STATS_BUCKET, Key=key,
