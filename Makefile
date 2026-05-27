@@ -51,7 +51,9 @@ test: ## Run the JS (vitest) suite
 
 infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
 	@aws s3api head-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) 2>/dev/null \
-	  || aws s3api create-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) >/dev/null
+	  || aws s3api create-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) \
+	       $$(test "$(REGION)" = us-east-1 || echo --create-bucket-configuration LocationConstraint=$(REGION)) \
+	       >/dev/null
 	aws cloudformation package \
 	  --template-file $(TEMPLATE) \
 	  --s3-bucket $(ARTIFACTS_BUCKET) \
