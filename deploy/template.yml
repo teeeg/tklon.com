@@ -2,26 +2,26 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: Creates static web page with a Cloudfront CDN, domain aliases, custom SSL certificate, and CI pipeline.
 
+# Values for these parameters come from deploy/params.yml (single source of
+# truth for what's customizable). This block is the schema; params.yml is the
+# data. The Makefile reads params.yml and passes values via --parameter-overrides.
 Parameters:
   AcmCertificateArn:
     AllowedPattern: "arn:aws:acm:.*"
-    Default: arn:aws:acm:us-east-1:295005258746:certificate/2f702844-d6e5-4573-8a41-57fcc0c1992b
-    Description: The AWS Certificate Manager certificate ARN associated with your top-level domain and www subdomain
+    Description: ACM certificate ARN covering the apex + www subdomain (must live in us-east-1)
     Type: String
   Route53HostZoneName:
-    Default: tklon.com
-    Description: The Route 53 hosted zone name where DNS records will be created
+    Description: Route 53 hosted zone where alias records to CloudFront are created
     Type: String
   GitHubRepositoryOwner:
+    Description: GitHub account or org that owns the repo (scopes the OIDC deploy role)
     Type: String
-    Default: teeeg
   GitHubRepositoryName:
+    Description: GitHub repository name (scopes the OIDC deploy role)
     Type: String
-    Default: tklon.com
   StatsReportEmail:
-    Type: String
-    Default: tommyklon@gmail.com
     Description: Address that receives the weekly stats email. SNS sends a one-time confirmation link on stack create/update — click it to start delivery.
+    Type: String
 
 Resources:
   WebsiteStaticAssetsBucket:

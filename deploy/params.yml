@@ -1,0 +1,15 @@
+# deploy/params.yml — values for the CloudFormation Parameters declared in
+# deploy/template.yml. This file is the single source of truth for what each
+# deployment customizes; the template itself is generic infrastructure.
+#
+# Edit a value and re-run `make infra` to apply.
+#
+# Format: flat YAML, one `Key: value` per line. No nesting, no multiline
+# strings, no quoting tricks — the Makefile parses with a tight regex.
+# Lines starting with `#` and blank lines are ignored.
+
+Route53HostZoneName:   tklon.com
+AcmCertificateArn:     arn:aws:acm:us-east-1:295005258746:certificate/2f702844-d6e5-4573-8a41-57fcc0c1992b
+GitHubRepositoryOwner: teeeg
+GitHubRepositoryName:  tklon.com
+StatsReportEmail:      tommyklon@gmail.com

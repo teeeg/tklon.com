@@ -3,6 +3,9 @@
 STACK  ?= tklondotcom
 REGION ?= us-east-1
 TEMPLATE := deploy/template.yml
+# Customizable values live in params.yml — edit there, not in the template
+# (which is generic schema). See deploy/params.yml for the format.
+PARAMS := deploy/params.yml
 # Holds zipped Lambda code uploaded by `cloudformation package`. Created
 # idempotently by `infra` — no manual bootstrap needed.
 ARTIFACTS_BUCKET ?= $(STACK)-cfn-artifacts
@@ -57,6 +60,7 @@ infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
 	aws cloudformation deploy \
 	  --template-file $(PACKAGED_TEMPLATE) \
 	  --stack-name $(STACK) \
+	  --parameter-overrides $$(sed -nE 's/^([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$$/\1=\2/p' $(PARAMS)) \
 	  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
 	  --region $(REGION)
 
