@@ -125,11 +125,13 @@ class WindowAggregate:
         self.visitors.add(vid)
 
         ref = row[COL["referer"]]
+        host = ""
         if ref and ref != "-":
             host = urllib.parse.urlparse(ref).hostname or ""
-            # Treat same-site referrers as direct: we only want external sources.
-            host = host if host and not host.endswith(SITE_HOSTNAME) else "(direct)"
-        else:
+        # Treat same-site referrers as direct. Match exact host or a proper
+        # subdomain ("a.tklon.com"); a bare endswith would also match unrelated
+        # domains like "eviltklon.com".
+        if not host or host == SITE_HOSTNAME or host.endswith("." + SITE_HOSTNAME):
             host = "(direct)"
         self.referrers[host] += 1
 
