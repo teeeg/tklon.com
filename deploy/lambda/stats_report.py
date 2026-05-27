@@ -297,7 +297,7 @@ def lambda_handler(event, context):
 def cli(argv):
     """`make stats` entry point. Window is parsed, raw logs and/or weekly aggregates are stitched."""
     p = argparse.ArgumentParser()
-    p.add_argument("--window", default="7d", help="Nd, Nw, Nmo, Ny, or 'all'")
+    p.add_argument("--window", default="7d", help="e.g. 7d, 12w, 3mo, 1y, or 'all' (default: 7d)")
     p.add_argument("--local", action="store_true", help="Required outside Lambda")
     args = p.parse_args(argv)
     if not args.local:
