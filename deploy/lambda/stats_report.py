@@ -43,6 +43,7 @@ import urllib.parse
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
+from functools import cache
 
 import boto3
 
@@ -55,11 +56,16 @@ SITE_URL       = os.environ.get("SITE_URL", "https://tklon.com")
 LOG_PREFIX     = os.environ.get("LOG_PREFIX", "cloudfront/")
 SITE_HOSTNAME  = urllib.parse.urlparse(SITE_URL).hostname or "tklon.com"
 
-# Heuristic bot filter. Refine over time as new bots show up in the logs.
+# Heuristic bot filter. Word-bounded tokens (\b…\b) avoid false positives from
+# unrelated substrings — e.g. an unanchored `monitoring` would match a UA
+# containing `EnterpriseMonitoring/3.2`. Slash-suffixed patterns are kept as
+# their own alternatives because \b doesn't match `/`. Refine over time as
+# new bots show up in the logs.
 BOT_UA = re.compile(
-    r"(googlebot|bingbot|crawl|spider|bot/|headless|curl|wget|monitoring|"
+    r"\b(?:googlebot|bingbot|crawler|crawling|spider|headless|monitoring|"
     r"slackbot|facebookexternalhit|twitterbot|linkedinbot|whatsapp|"
-    r"telegrambot|pingdom|uptimerobot|ahrefsbot|semrush|mj12bot|duckduckbot)",
+    r"telegrambot|pingdom|uptimerobot|ahrefsbot|semrush|mj12bot|duckduckbot)\b"
+    r"|bot/|curl/|wget/",
     re.IGNORECASE,
 )
 
@@ -200,8 +206,13 @@ class ReportAggregate:
 
 # --- Parsing ----------------------------------------------------------------
 
+@cache
 def _is_html_path(uri: str) -> bool:
-    """Treat directory-style URIs and *.html as pageviews; everything else is an asset."""
+    """Treat directory-style URIs and *.html as pageviews; everything else is an asset.
+
+    Cached because the same handful of URIs (top pages, feeds, the home page)
+    repeat constantly across log rows — a free speedup with no behaviour change.
+    """
     if uri.endswith("/") or uri.endswith(".html"):
         return True
     last = uri.rsplit("/", 1)[-1]
