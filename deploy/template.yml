@@ -97,6 +97,13 @@ Resources:
         Enabled: true
         HttpVersion: http2and3
         IPV6Enabled: true
+        Logging:
+          # Standard (legacy) access logs to S3. ~5–60 min delivery delay; gzipped
+          # tab-separated files. Used by the weekly stats Lambda. IncludeCookies
+          # is false since we don't set any (and they'd add PII otherwise).
+          Bucket: !GetAtt WebsiteLogsBucket.DomainName
+          Prefix: cloudfront/
+          IncludeCookies: false
         Origins:
           # RegionalDomainName (not DomainName) is required with OAC — the
           # legacy global endpoint can fail SigV4 verification for buckets
