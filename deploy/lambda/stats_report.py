@@ -1,17 +1,25 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["boto3"]
+# ///
 """
 Weekly stats report for tklon.com.
 
-Runs in two modes from the same source:
+Runs in two modes from the same source — single boto3-based code path, no
+backend abstraction:
 
 - AWS Lambda (lambda_handler): EventBridge fires weekly, reads the last 7 days
   of CloudFront access logs from S3, publishes a plain-text report to SNS, and
-  archives a weekly aggregate JSON to the stats bucket.
+  archives a weekly aggregate JSON to the stats bucket. boto3 is preinstalled
+  in the Lambda runtime.
 - Local CLI (--local --window …): prints a report for an arbitrary window.
-  Windows ≤90 days read raw logs directly; longer windows stitch stored
-  weekly aggregates with the current partial week.
+  Invoked via `uv run` (see Makefile), which honours the PEP 723 metadata
+  above and provisions boto3 in an isolated, cached venv. No global pip
+  install, no system Python pollution, no requirements.txt to drift.
 
-Both modes share parse_logs(), build_aggregate(), and format_report() — there
-is one definition of "what's in the report" and "how a pageview is counted."
+parse_logs(), update_aggregate(), and format_report() are shared — there is
+one definition of "what's in the report" and "how a pageview is counted."
 """
 
 import argparse

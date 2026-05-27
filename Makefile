@@ -86,6 +86,7 @@ publish: build ## Build, sync to S3 with cache headers, invalidate HTML on Cloud
 deploy: infra publish ## Full deploy: stack update, then content
 
 stats: ## Print access-log report. Override window: WINDOW=12w (default 7d). Units: Nd/Nw/Nmo/Ny/all
+	@command -v uv >/dev/null || { echo "uv not installed — run \`brew install uv\` (or see https://docs.astral.sh/uv/getting-started/installation/)"; exit 1; }
 	@LOGS_BUCKET=$$(aws cloudformation describe-stack-resource --stack-name $(STACK) \
 	  --logical-resource-id WebsiteLogsBucket \
 	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)) \
@@ -93,4 +94,4 @@ stats: ## Print access-log report. Override window: WINDOW=12w (default 7d). Uni
 	  --logical-resource-id WebsiteStatsBucket \
 	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)) \
 	 AWS_DEFAULT_REGION=$(REGION) \
-	 python3 deploy/lambda/stats_report.py --local --window $(or $(WINDOW),7d)
+	 uv run deploy/lambda/stats_report.py --local --window $(or $(WINDOW),7d)
