@@ -71,6 +71,10 @@ EDGE_CITY = {
     "SYD": "Sydney",
     "GRU": "São Paulo",
     "MEX": "Mexico City",
+    "QRO": "Querétaro",
+    "PHX": "Phoenix",
+    "MRS": "Marseille",
+    "TLV": "Tel Aviv",
 }
 
 # CloudFront standard log columns (tab-separated). Order matters — full
