@@ -62,7 +62,7 @@ infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
 	aws cloudformation deploy \
 	  --template-file $(PACKAGED_TEMPLATE) \
 	  --stack-name $(STACK) \
-	  --parameter-overrides $$(sed -nE 's/^([A-Za-z_][A-Za-z0-9_]*):[[:space:]]*(.*)$$/\1=\2/p' $(PARAMS)) \
+	  --parameter-overrides $$(sed -nE -e 's/[[:space:]]*\r?$$//' -e 's/^([A-Za-z_][A-Za-z0-9_]*):[[:space:]]+(.+)$$/\1=\2/p' $(PARAMS)) \
 	  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
 	  --region $(REGION)
 
