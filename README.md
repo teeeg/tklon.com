@@ -42,8 +42,14 @@ Per-deployment values live in [`deploy/params.yml`](deploy/params.yml) (single s
 Requirements:
 - [Ruby](https://www.ruby-lang.org/) (managed with rbenv via `src/.ruby-version`)
 - [Node](https://nodejs.org/)
+- [ffmpeg](https://ffmpeg.org/) (only for `make video`)
 
-`make install` to install gems + npm deps  
+`make install` to install gems, npm deps + the pre-push git hook  
 `make serve` to run the dev server at http://localhost:4567  
 `make build` for a production build into `src/build`  
 `make test` to run the JS tests
+
+## Videos
+
+Self-hosted videos are uploaded out-of-band. Drop a clip in `src/videos/` (gitignored), run `make video SRC=src/videos/foo.mov` to encode + upload it to S3 and record it in `src/data/videos.json`, then embed with `responsive_video "foo", "caption"`. `make check-videos` (pre-push) keeps sources and manifest in sync.
+
