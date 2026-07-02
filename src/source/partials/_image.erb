@@ -16,14 +16,19 @@
   fallback_width = widths.include?(750) ? 750 : widths.max
   srcset = ->(ext) { widths.map { |w| "/images/#{name}-#{w}-#{digest}.#{ext} #{w}w" }.join(", ") }
   sizes = "(min-width: 750px) 750px, 100vw"
+  # Largest variant. The wrapping link opens it full-screen on tap/click; on
+  # phones the browser's image viewer then offers native pinch-to-zoom.
+  full_src = "/images/#{name}-#{widths.max}-#{digest}.webp"
 %>
 <figure>
-    <picture>
-        <source type="image/avif" sizes="<%= sizes %>" srcset="<%= srcset.("avif") %>" />
-        <source type="image/webp" sizes="<%= sizes %>" srcset="<%= srcset.("webp") %>" />
-        <img src="/images/<%= name %>-<%= fallback_width %>-<%= digest %>.webp"
-             width="<%= meta["width"] %>" height="<%= meta["height"] %>"
-             loading="lazy" decoding="async" alt="<%= h(alt_text) %>" />
-    </picture>
+    <a class="zoom" href="<%= full_src %>" aria-label="View image full screen">
+        <picture>
+            <source type="image/avif" sizes="<%= sizes %>" srcset="<%= srcset.("avif") %>" />
+            <source type="image/webp" sizes="<%= sizes %>" srcset="<%= srcset.("webp") %>" />
+            <img src="/images/<%= name %>-<%= fallback_width %>-<%= digest %>.webp"
+                 width="<%= meta["width"] %>" height="<%= meta["height"] %>"
+                 loading="lazy" decoding="async" alt="<%= h(alt_text) %>" />
+        </picture>
+    </a>
     <% if defined?(caption) && caption %><figcaption><%= h(caption) %></figcaption><% end %>
 </figure>
