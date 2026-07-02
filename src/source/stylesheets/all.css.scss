@@ -95,6 +95,14 @@ a:hover {
   border-radius: 2px;
 }
 
+// Images are wrapped in a link (partials/_image.erb) that opens the full-size
+// variant — full screen + native pinch-zoom on phones. Block layout drops the
+// inline descender gap; the cursor signals it's clickable.
+figure a.zoom {
+  display: block;
+  cursor: zoom-in;
+}
+
 img,
 video {
   max-width: 100%;
