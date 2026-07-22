@@ -1,0 +1,9 @@
+# Workspace manifest so `cargo run -- <cmd>` works from the repo root.
+# The one member is the SSG crate in generator/ (which builds the `tklon` binary).
+[workspace]
+members = ["generator"]
+resolver = "2"
+default-members = ["generator"]
+
+[profile.release]
+opt-level = 2

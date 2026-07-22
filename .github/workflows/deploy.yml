@@ -4,7 +4,19 @@ on:
   push:
     branches: [master]
     paths:
-      - "src/**"
+      - "site/**"
+      - "generator/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".github/workflows/deploy.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "generator/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -14,38 +26,49 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+# Only GitHub-/AWS-official actions here — no independent-maintainer actions.
+# Dependabot keeps them on the latest secure version (.github/dependabot.yml).
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: ruby/setup-ruby@v1
+      # The binary reads site content at runtime, so publishing a post never
+      # changes it. Keyed on the generator sources alone: a content-only merge
+      # restores 30 MB and skips cargo, rustup and nasm entirely.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: tklon
         with:
-          ruby-version: .ruby-version
-          working-directory: src
-          bundler-cache: true
+          path: target/release/tklon
+          key: tklon-${{ runner.os }}-${{ hashFiles('generator/**', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml') }}
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
+      # rav1e assembles its x86_64 SIMD with nasm, which the runner lacks.
+      - name: Install nasm
+        if: steps.tklon.outputs.cache-hit != 'true'
+        run: sudo apt-get update && sudo apt-get install -y nasm
 
-      - run: npm install
+      # rustup + rust-toolchain.toml (pinned 1.94.0) provide the compiler.
+      # --locked builds the exact versions in Cargo.lock.
+      - name: Build the binary
+        if: steps.tklon.outputs.cache-hit != 'true'
+        run: cargo build --release --locked
 
-      - run: NO_CONTRACTS=true bundle exec middleman build
+      - name: Build the site
+        run: ./target/release/tklon build
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      # Pull requests stop here: the build is the check, the deploy is not.
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        if: github.event_name != 'pull_request'
         with:
           role-to-assume: arn:aws:iam::295005258746:role/tklondotcom-GitHubActionsDeployRole-KmJpDGB6eg8r
           aws-region: us-east-1
 
       - name: Sync to S3 and invalidate CloudFront
+        if: github.event_name != 'pull_request'
         run: |
           # Two-pass sync so each bucket of files gets the right Cache-Control:
           #   1. Hashed/immutable assets (CSS, JS, images, fonts) — 1y immutable.
@@ -53,14 +76,19 @@ jobs:
           #      ships under a new URL; serving it forever is safe.
           #   2. HTML / feeds — short edge TTL with stale-while-revalidate, so
           #      users never wait on revalidation and updates land in ~5 min.
-          # --exclude 'media/*': self-hosted videos are uploaded out-of-band by
-          # `make video` and never live in build/; without this they'd be deleted.
+          # --exclude 'media/*' and 'masters/*': self-hosted videos and the photo
+          # originals are uploaded out-of-band and never live in build/; without
+          # these, --delete would remove them.
           # Hashed assets ship first so HTML never references a missing file.
-          aws s3 sync build/ s3://tklon.com-assets --delete --exclude 'media/*' \
+          aws s3 sync build/ s3://tklon.com-assets --delete \
+            --exclude 'media/*' --exclude 'masters/*' \
             --exclude '*.html' --exclude '*.xml' --exclude '*.txt' \
             --cache-control 'public,max-age=31536000,immutable'
           aws s3 sync build/ s3://tklon.com-assets --delete --exclude '*' \
             --include '*.html' --include '*.xml' --include '*.txt' \
             --cache-control 'public,max-age=60,s-maxage=300,stale-while-revalidate=86400'
+          # `/*` — a wildcard only acts as one as the last character, so a path
+          # like '/*.html' matches a file literally named that, i.e. nothing.
+          # One path, and the free tier covers 1000 a month.
           aws cloudfront create-invalidation --distribution-id E12C54H3GMYHN0 \
-            --paths '/*.html' '/*.xml' '/*.txt'
+            --paths '/*'

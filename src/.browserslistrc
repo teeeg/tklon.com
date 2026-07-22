@@ -1,4 +1,0 @@
-# Modern evergreen browsers only (hobby blog), in sync with tsconfig "target": ESNext.
-# https://github.com/browserslist/browserslist
-last 2 versions
-not dead

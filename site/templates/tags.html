@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% block head %}
+    {# Set <html data-tags> from the URL before first paint so the CSS filters +
+       highlights with no flicker; chip clicks toggle the tag in the query and
+       re-sync the attribute — CSS does the rest. Kept as one line so the output
+       is minimal (minify-html doesn't touch <script> contents). #}
+    <script>const H=document.documentElement,S=()=>new URLSearchParams(location.search),sync=q=>H.dataset.tags=[...q.keys()].join(" ");sync(S());addEventListener("DOMContentLoaded",()=>{for(const a of document.querySelectorAll(".Tag"))a.onclick=e=>{e.preventDefault();const q=S(),t=a.dataset.tag;q.has(t)?q.delete(t):q.set(t,"");history.replaceState({},"",location.pathname+(q.toString()?"?"+q:""));sync(q)}});</script>
+{% endblock %}
+{% block content %}
+    <h1 class="visually-hidden">All posts</h1>
+    <p>
+      Filter by tag:
+      {% for tag in all_tags %}<a href="/tags/?{{ tag }}" class="Tag" data-tag="{{ tag }}">{{ tag }}</a> {% endfor %}
+    </p>
+
+    <ul class="Articles">
+    {% for post in posts %}
+      <li class="Article {{ post.tags | join(sep=' ') }}">
+        <a href="{{ post.url }}">{{ post.title | escape }}</a>
+        <time class="date" datetime="{{ post.date_iso }}">{{ post.date_month }}</time>
+      </li>
+    {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% extends "layout.html" %}
+{% block content %}
+    <article>
+      <h1>{{ page.title | escape }}</h1>
+      {{ page.body_html | safe }}
+    </article>
+{% endblock %}

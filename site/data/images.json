@@ -1,0 +1,62 @@
+{
+  "speedbox-cable-arrangement": {
+    "width": 2250,
+    "height": 1688,
+    "widths": [
+      750,
+      1500
+    ],
+    "digest": "684d62c2",
+    "thumbhash": "E/gNDYK9p5efeXmeV5h4ibBoB3l3"
+  },
+  "speedbox-cable-config": {
+    "width": 2250,
+    "height": 1688,
+    "widths": [
+      750,
+      1500
+    ],
+    "digest": "1e609d1b",
+    "thumbhash": "EvgNBYCviXm/d4itZ6doiYAnArd3"
+  },
+  "speedbox-motor-exposed": {
+    "width": 2250,
+    "height": 1450,
+    "widths": [
+      750,
+      1500
+    ],
+    "digest": "cf0b2255",
+    "thumbhash": "GfgNLIaTuoh4eIVvdmWLj7v4uQ=="
+  },
+  "yogurt-195-88-poster": {
+    "width": 1080,
+    "height": 1920,
+    "widths": [
+      750
+    ],
+    "digest": "5e571f1f",
+    "thumbhash": "KQgGDAA3mjIK5YPWqGMCUVLgzQ=="
+  },
+  "yogurt-sous-vide-setup": {
+    "width": 4284,
+    "height": 5712,
+    "widths": [
+      750,
+      1500
+    ],
+    "digest": "92b11c73",
+    "thumbhash": "mfcJNQi6iEd5+GepeY2Xd7dgiwum",
+    "camera": "Apple iPhone 15",
+    "settings": "26 mm · f/1.6 · 1/26 s · ISO 640"
+  },
+  "yogurt-texture-test-poster": {
+    "width": 1080,
+    "height": 1920,
+    "widths": [
+      750
+    ],
+    "digest": "89b9e89f",
+    "thumbhash": "aQgKDAC4+nY3eGsHp0dElSAMzQ=="
+  }
+}

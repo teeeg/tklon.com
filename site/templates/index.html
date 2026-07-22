@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+    <h1 class="visually-hidden">Recent posts</h1>
+    {% for post in posts %}
+    <section class="h-entry">
+      <h3>&rarr; <a class="u-url p-name" href="{{ post.url }}">{{ post.title | escape }}</a> </h3>
+      <div class="e-content">{{ post.body_html | safe }}</div>
+      {{ post.date_short }}
+      <em>tags:</em> {% for tag in post.tags %}<a href="/tags/?{{ tag }}" class="Tag p-category" data-tag="{{ tag }}">{{ tag }}</a> {% endfor %}
+    </section>
+    {% endfor %}
+    <footer>
+      <p>
+        {% if prev_url %}<a href="{{ prev_url }}" aria-label="Previous page">&larr; Prev</a> <a href="/">tklon.com</a> {% endif %}
+        {% if next_url %}<a href="{{ next_url }}" aria-label="Next page">Next &rarr;</a>{% endif %}
+      </p>
+    </footer>
+{% endblock %}
+{% block footer %}
+    <footer class="site-footer">
+      <p class="h-card">
+        Written by <a class="p-name u-url" href="/about/">Tomas Klonecke</a>
+        · <a rel="me" href="https://github.com/teeeg">github</a>
+        · <a href="/feed.xml">feed</a>
+      </p>
+    </footer>
+{% endblock %}

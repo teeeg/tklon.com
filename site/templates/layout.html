@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta name="theme-color" content="#fbfbf9">
+    <title>{{ display_title | escape }}</title>
+    <meta name="description" content="{{ description | escape }}">
+    <link rel="canonical" href="{{ canonical | escape }}">
+    <meta property="og:title" content="{{ og_title | escape }}">
+    <meta property="og:description" content="{{ description | escape }}">
+    <meta property="og:type" content="{{ og_type }}">
+    <meta property="og:url" content="{{ canonical | escape }}">
+    <meta property="og:site_name" content="tklon.com">
+    <meta name="twitter:card" content="summary">
+    <link rel="alternate" type="application/atom+xml" title="tklon.com" href="/feed.xml">
+    <link rel="preload" href="{{ font_href }}" as="font" type="font/woff2" crossorigin>
+    <link href="{{ css_href }}" rel="stylesheet">
+    {% block head %}{% endblock %}
+  </head>
+
+  <body class="{{ page_classes }}">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <main id="main">
+{% block content %}{% endblock %}
+    </main>
+    {% block footer %}
+    <footer class="site-footer">
+      <p>You're reading <a href="/">tklon.com</a></p>
+    </footer>
+    {% endblock %}
+  </body>
+</html>
