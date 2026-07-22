@@ -35,7 +35,7 @@ pub fn serve(root: &Path, out: &Path, port: u16) -> Res<()> {
         }
     });
 
-    let server = Server::http(("0.0.0.0", port)).map_err(|e| e.to_string())?;
+    let server = Server::http(("127.0.0.1", port)).map_err(|e| e.to_string())?;
     println!("serving {} at http://localhost:{port}", out.display());
     for request in server.incoming_requests() {
         let response = handle(out, request.url());
@@ -54,9 +54,17 @@ fn handle(out: &Path, url: &str) -> Response<Cursor<Vec<u8>>> {
         fp = fp.join("index.html");
     }
 
-    let (status, bytes, ctype) = match fs::read(&fp) {
-        Ok(b) => (200u16, b, content_type(&fp)),
-        Err(_) => {
+    // Resolve symlinks and `..` before reading, and refuse anything that climbs
+    // out of `out` — otherwise `GET /../../etc/passwd` reads arbitrary files.
+    // A path that cannot be canonicalized does not exist; it falls through to 404.
+    let contained = match (fp.canonicalize(), out.canonicalize()) {
+        (Ok(p), Ok(base)) => p.starts_with(&base),
+        _ => false,
+    };
+
+    let (status, bytes, ctype) = match fs::read(&fp).ok().filter(|_| contained) {
+        Some(b) => (200u16, b, content_type(&fp)),
+        None => {
             let body = fs::read(out.join("404.html")).unwrap_or_else(|_| b"404 Not Found".to_vec());
             (404, body, "text/html; charset=utf-8")
         }
