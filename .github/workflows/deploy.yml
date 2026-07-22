@@ -37,6 +37,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # rav1e assembles its x86_64 SIMD with nasm, which the runner lacks.
+      - name: Install nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
       # rustup + rust-toolchain.toml (pinned 1.94.0) provide the compiler.
       # --locked builds the exact versions in Cargo.lock.
       - name: Build the site

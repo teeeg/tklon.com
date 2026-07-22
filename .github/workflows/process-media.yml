@@ -31,6 +31,10 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
+      # rav1e assembles its x86_64 SIMD with nasm, which the runner lacks.
+      - name: Install nasm
+        run: sudo apt-get update && sudo apt-get install -y nasm
+
       - name: Locate the post and count `@` slots
         id: scan
         env:
