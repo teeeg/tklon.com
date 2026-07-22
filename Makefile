@@ -41,7 +41,7 @@ infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
 	  --template-file $(PACKAGED_TEMPLATE) \
 	  --stack-name $(STACK) \
 	  --parameter-overrides $$(sed -nE -e 's/[[:space:]]*\r?$$//' -e 's/^([A-Za-z_][A-Za-z0-9_]*):[[:space:]]+(.+)$$/\1=\2/p' $(PARAMS)) \
-	  --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+	  --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
 	  --region $(REGION)
 
 publish: ## Build the site with tklon, sync to S3 with cache headers, invalidate HTML
