@@ -17,7 +17,7 @@ serde_json = "1"
 grass = "0.13"
 tiny_http = "0.12"
 sha2 = "0.10"
-minify-html = "0.15"
+minify-html = "0.18"
 
 # media authoring (tklon images) — pure-Rust encoders, no system libvips
 image = "0.25"
