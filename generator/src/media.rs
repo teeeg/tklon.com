@@ -128,13 +128,18 @@ pub fn images(root: &Path) -> Res<()> {
         manifest_path.display()
     );
     backup_masters(&masters, &bucket);
+    backup_masters(&site.join("videos"), &bucket);
     Ok(())
 }
 
-/// Back up the (gitignored) masters to S3, mirroring `tklon video`. Best-effort:
-/// never fails variant generation, but warns loudly if the originals — which no
-/// longer live in git — aren't protected.
+/// Back up the (gitignored) photo and video masters to S3. Best-effort: never
+/// fails variant generation, but warns loudly if the originals — which no longer
+/// live in git — aren't protected. A sync (not a one-shot copy) so a master
+/// missing from S3 is restored on the next run rather than silently staying lost.
 fn backup_masters(dir: &Path, bucket: &str) {
+    if !dir.is_dir() {
+        return;
+    }
     let dest = format!("s3://{bucket}/masters/");
     let ok = Command::new("aws")
         .args(["s3", "sync", &dir.to_string_lossy(), &dest, "--size-only", "--exclude", ".*"])
@@ -345,19 +350,15 @@ fn process_video(site: &Path, video_dir: &Path, file: &str, bucket: &str) -> Res
     // 3. Probe the ENCODED file so dims match what's actually served.
     let (width, height, duration) = probe(&final_path)?;
 
-    // 4. Upload the encoded MP4 (immutable — content-addressed name)…
+    // 4. Upload the encoded MP4 (immutable — content-addressed name). The
+    // untouched master is backed up by the backup_masters sync that closes
+    // `tklon images`, which this command runs once every source is encoded.
     println!("→ uploading {final_name}");
     run("aws", &[
         "s3", "cp", final_path.to_str().unwrap(),
         &format!("s3://{bucket}/media/{final_name}"),
         "--content-type", "video/mp4",
         "--cache-control", "public, max-age=31536000, immutable",
-    ])?;
-    // …and back up the untouched master (the only irreplaceable file in the chain).
-    println!("→ backing up master {file}");
-    run("aws", &[
-        "s3", "cp", input.to_str().unwrap(),
-        &format!("s3://{bucket}/masters/{file}"),
     ])?;
 
     // 5. Record in the committed manifest only after a successful upload.
