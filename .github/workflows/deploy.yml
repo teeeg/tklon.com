@@ -87,5 +87,8 @@ jobs:
           aws s3 sync build/ s3://tklon.com-assets --delete --exclude '*' \
             --include '*.html' --include '*.xml' --include '*.txt' \
             --cache-control 'public,max-age=60,s-maxage=300,stale-while-revalidate=86400'
+          # `/*` — a wildcard only acts as one as the last character, so a path
+          # like '/*.html' matches a file literally named that, i.e. nothing.
+          # One path, and the free tier covers 1000 a month.
           aws cloudfront create-invalidation --distribution-id E12C54H3GMYHN0 \
-            --paths '/*.html' '/*.xml' '/*.txt'
+            --paths '/*'

@@ -61,9 +61,9 @@ publish: ## Build the site with tklon, sync to S3 with cache headers, invalidate
 	aws s3 sync build/ "s3://$$bucket" --delete --exclude '*' \
 	  --include '*.html' --include '*.xml' --include '*.txt' \
 	  --cache-control 'public,max-age=60,s-maxage=300,stale-while-revalidate=86400'; \
-	echo "→ invalidating $$dist (HTML/feeds only — hashed assets self-bust)"; \
+	echo "→ invalidating $$dist"; \
 	aws cloudfront create-invalidation --distribution-id "$$dist" \
-	  --paths '/*.html' '/*.xml' '/*.txt'
+	  --paths '/*'
 
 deploy: infra publish ## Full deploy: stack update, then content
 
