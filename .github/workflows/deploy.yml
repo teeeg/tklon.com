@@ -35,34 +35,33 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      # The binary reads site content at runtime, so publishing a post never
+      # changes it. Keyed on the generator sources alone: a content-only merge
+      # restores 30 MB and skips cargo, rustup and nasm entirely.
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: tklon
+        with:
+          path: target/release/tklon
+          key: tklon-${{ runner.os }}-${{ hashFiles('generator/**', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml') }}
 
       # rav1e assembles its x86_64 SIMD with nasm, which the runner lacks.
       - name: Install nasm
+        if: steps.tklon.outputs.cache-hit != 'true'
         run: sudo apt-get update && sudo apt-get install -y nasm
-
-      # Runners start cold, so without this every dependency recompiles each run.
-      # Keyed on Cargo.lock + toolchain: a dependency or compiler change misses
-      # and rebuilds, anything else (a post, a template) hits.
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
-            target
-          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
-          # On a dependency bump, fall back to the previous cache so only the
-          # changed crates rebuild rather than all of them.
-          restore-keys: cargo-${{ runner.os }}-
 
       # rustup + rust-toolchain.toml (pinned 1.94.0) provide the compiler.
       # --locked builds the exact versions in Cargo.lock.
+      - name: Build the binary
+        if: steps.tklon.outputs.cache-hit != 'true'
+        run: cargo build --release --locked
+
       - name: Build the site
-        run: cargo run --release --locked -- build
+        run: ./target/release/tklon build
 
       # Pull requests stop here: the build is the check, the deploy is not.
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         if: github.event_name != 'pull_request'
         with:
           role-to-assume: arn:aws:iam::295005258746:role/tklondotcom-GitHubActionsDeployRole-KmJpDGB6eg8r
@@ -77,10 +76,12 @@ jobs:
           #      ships under a new URL; serving it forever is safe.
           #   2. HTML / feeds — short edge TTL with stale-while-revalidate, so
           #      users never wait on revalidation and updates land in ~5 min.
-          # --exclude 'media/*': self-hosted videos are uploaded out-of-band and
-          # never live in build/; without this they'd be deleted.
+          # --exclude 'media/*' and 'masters/*': self-hosted videos and the photo
+          # originals are uploaded out-of-band and never live in build/; without
+          # these, --delete would remove them.
           # Hashed assets ship first so HTML never references a missing file.
-          aws s3 sync build/ s3://tklon.com-assets --delete --exclude 'media/*' \
+          aws s3 sync build/ s3://tklon.com-assets --delete \
+            --exclude 'media/*' --exclude 'masters/*' \
             --exclude '*.html' --exclude '*.xml' --exclude '*.txt' \
             --cache-control 'public,max-age=31536000,immutable'
           aws s3 sync build/ s3://tklon.com-assets --delete --exclude '*' \
