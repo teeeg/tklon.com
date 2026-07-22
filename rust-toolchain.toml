@@ -1,0 +1,3 @@
+# Pin the toolchain so the binary builds identically forever (spec §9).
+[toolchain]
+channel = "1.94.0"

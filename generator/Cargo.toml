@@ -1,0 +1,33 @@
+[package]
+name = "generator"
+version = "0.1.0"
+edition = "2021"
+description = "Static site generator for tklon.com"
+
+# The crate lives in generator/ but the command it builds is `tklon`.
+[[bin]]
+name = "tklon"
+path = "src/main.rs"
+
+[dependencies]
+pulldown-cmark = "0.12"
+tera = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+grass = "0.13"
+tiny_http = "0.12"
+sha2 = "0.10"
+minify-html = "0.15"
+
+# media authoring (tklon images) — pure-Rust encoders, no system libvips
+image = "0.25"
+ravif = "0.11"
+rgb = "0.8"
+imgref = "1"
+webp = "0.3"
+thumbhash = "0.1"        # average-colour placeholders
+kamadak-exif = "0.5"     # capture metadata (camera/lens/settings)
+base64 = "0.22"
+
+[dev-dependencies]
+insta = "1"
