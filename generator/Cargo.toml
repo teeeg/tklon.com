@@ -26,7 +26,7 @@ rgb = "0.8"
 imgref = "1"
 webp = "0.3"
 thumbhash = "0.1"        # average-colour placeholders
-kamadak-exif = "0.5"     # capture metadata (camera/lens/settings)
+kamadak-exif = "0.6"     # capture metadata (camera/lens/settings)
 base64 = "0.22"
 
 [dev-dependencies]
