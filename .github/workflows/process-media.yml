@@ -45,8 +45,12 @@ jobs:
           post=$(gh pr view "$PR" --json files -q '.files[].path' \
                  | grep -E '^site/source/posts/.*\.md$' | head -1 || true)
           echo "post=$post" >> "$GITHUB_OUTPUT"
+          # grep exits 1 on a prose-only post with no slots — under pipefail
+          # that would kill the step instead of yielding a count of 0.
           count=0
-          [ -n "$post" ] && count=$(grep -oE '\]\(@[) ]' "$post" | wc -l | tr -d ' ')
+          if [ -n "$post" ]; then
+            count=$(grep -oE '\]\(@[) ]' "$post" | wc -l | tr -d ' ' || true)
+          fi
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "found $count placeholder(s) in ${post:-<none>}"
 
