@@ -27,7 +27,7 @@ jobs:
       startsWith(github.head_ref, 'post/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.event.pull_request.head.sha }}
 
@@ -84,9 +84,9 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
           files=(media/att-*)
-          cargo run --release -- ingest "$POST" "${files[@]}" > names.txt
+          cargo run --release --locked -- ingest "$POST" "${files[@]}" > names.txt
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         if: steps.scan.outputs.count != '0'
         with:
           role-to-assume: arn:aws:iam::295005258746:role/tklondotcom-media-backup
@@ -94,7 +94,7 @@ jobs:
 
       - name: Encode variants + manifest + back up masters
         if: steps.scan.outputs.count != '0'
-        run: cargo run --release -- images
+        run: cargo run --release --locked -- images
 
       - name: Commit to the PR branch
         if: steps.scan.outputs.count != '0'
