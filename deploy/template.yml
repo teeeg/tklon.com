@@ -33,6 +33,10 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      # Recovery window for the irreplaceable masters/ originals: a mistaken
+      # delete leaves a recoverable noncurrent version rather than nothing.
+      VersioningConfiguration:
+        Status: Enabled
       # Archived video originals under masters/ are large and never served —
       # move them to Glacier Instant Retrieval (still instant, far cheaper).
       LifecycleConfiguration:
@@ -43,6 +47,11 @@ Resources:
             Transitions:
               - StorageClass: GLACIER_IR
                 TransitionInDays: 1
+          # Without this, every deploy's replaced HTML/CSS is retained forever.
+          - Id: ExpireNoncurrentVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
 
   # Raw CloudFront access logs land here. CF standard logging writes via an
   # ACL grant to the awslogsdelivery group, which requires BucketOwnerPreferred
@@ -256,6 +265,13 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/*"
+              # masters/ holds the only copy of the camera originals and is
+              # uploaded out of band — the deploy role must never touch it.
+              - Effect: Deny
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/masters/*"
               - Effect: Allow
                 Action: cloudfront:CreateInvalidation
                 Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontDistribution}"
