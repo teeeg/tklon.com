@@ -53,7 +53,8 @@ publish: ## Build the site with tklon, sync to S3 with cache headers, invalidate
 	  --logical-resource-id CloudfrontDistribution \
 	  --query 'StackResourceDetail.PhysicalResourceId' --output text --region $(REGION)); \
 	echo "→ syncing hashed/immutable assets to s3://$$bucket"; \
-	aws s3 sync build/ "s3://$$bucket" --delete --exclude 'media/*' \
+	aws s3 sync build/ "s3://$$bucket" --delete \
+	  --exclude 'media/*' --exclude 'masters/*' \
 	  --exclude '*.html' --exclude '*.xml' --exclude '*.txt' \
 	  --cache-control 'public,max-age=31536000,immutable'; \
 	echo "→ syncing HTML / feeds (short TTL with stale-while-revalidate)"; \
