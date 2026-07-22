@@ -278,6 +278,11 @@ Resources:
               StringEquals:
                 token.actions.githubusercontent.com:aud: sts.amazonaws.com
                 token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepositoryOwner}/${GitHubRepositoryName}:pull_request"
+              # Pin the role to this one workflow file, so another workflow added
+              # in a PR cannot assume it and bypass the post/* branch guard. The
+              # ref is wildcarded: pull_request runs report refs/pull/N/merge.
+              StringLike:
+                token.actions.githubusercontent.com:job_workflow_ref: !Sub "${GitHubRepositoryOwner}/${GitHubRepositoryName}/.github/workflows/process-media.yml@*"
       Policies:
         - PolicyName: BackupMasters
           PolicyDocument:
