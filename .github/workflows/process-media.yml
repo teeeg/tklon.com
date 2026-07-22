@@ -42,15 +42,33 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          post=$(gh pr view "$PR" --json files -q '.files[].path' \
-                 | grep -E '^site/source/posts/.*\.md$' | head -1 || true)
-          echo "post=$post" >> "$GITHUB_OUTPUT"
-          # grep exits 1 on a prose-only post with no slots — under pipefail
-          # that would kill the step instead of yielding a count of 0.
+          # A PR may touch several posts while only one carries new photos, so
+          # pick by which post has `@` slots rather than by position.
+          posts=$(gh pr view "$PR" --json files -q '.files[].path' \
+                  | grep -E '^site/source/posts/.*\.md$' || true)
+
+          post=""
           count=0
-          if [ -n "$post" ]; then
-            count=$(grep -oE '\]\(@[) ]' "$post" | wc -l | tr -d ' ' || true)
+          extra=""
+          while IFS= read -r p; do
+            # Skip blanks (no posts touched) and posts the PR deletes.
+            if [ -z "$p" ] || [ ! -f "$p" ]; then continue; fi
+            # grep exits 1 on a prose-only post — under pipefail that would kill
+            # the step instead of yielding a count of 0.
+            n=$(grep -oE '\]\(@[) ]' "$p" | wc -l | tr -d ' ' || true)
+            if [ "$n" -gt 0 ]; then
+              if [ -n "$post" ]; then extra="$extra $p"; else post="$p"; count="$n"; fi
+            fi
+          done <<< "$posts"
+
+          # Attachments are one flat ordered list, so slots in two posts have no
+          # unambiguous split. Refuse rather than guess which photo goes where.
+          if [ -n "$extra" ]; then
+            echo "::error::\`@\` slots in more than one post ($post$extra) — attach photos for one post per PR."
+            exit 1
           fi
+
+          echo "post=$post" >> "$GITHUB_OUTPUT"
           echo "count=$count" >> "$GITHUB_OUTPUT"
           echo "found $count placeholder(s) in ${post:-<none>}"
 
