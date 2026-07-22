@@ -1,0 +1,7 @@
+name: tklon.com
+default_title: tklon.com — personal blog
+description: "Personal blog: cooking, bikes, books, film, travel."
+author: Tomas Klonecke
+base_url: https://tklon.com
+edit_base: https://github.com/teeeg/tklon.com/edit/master
+bucket: tklon.com-assets

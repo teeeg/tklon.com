@@ -1,0 +1,40 @@
+.Tag {
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.Tag:before {
+  content: '#';
+  opacity: 0.6;
+}
+
+// Selected-tag highlight and dimming of non-matching articles are generated
+// per-tag at build time (:root[data-tags~="…"]) so the initial state is applied
+// before paint. Only the transition lives here, for clicks after load.
+@media (prefers-reduced-motion: no-preference) {
+  .Article {
+    transition: opacity 0.2s;
+  }
+}
+
+// post list: title left, muted date pushed to the right
+.Articles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.Article {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--s2);
+}
+
+.Article .date {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
