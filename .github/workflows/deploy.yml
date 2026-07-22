@@ -41,6 +41,21 @@ jobs:
       - name: Install nasm
         run: sudo apt-get update && sudo apt-get install -y nasm
 
+      # Runners start cold, so without this every dependency recompiles each run.
+      # Keyed on Cargo.lock + toolchain: a dependency or compiler change misses
+      # and rebuilds, anything else (a post, a template) hits.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            target
+          key: cargo-${{ runner.os }}-${{ hashFiles('Cargo.lock', 'rust-toolchain.toml') }}
+          # On a dependency bump, fall back to the previous cache so only the
+          # changed crates rebuild rather than all of them.
+          restore-keys: cargo-${{ runner.os }}-
+
       # rustup + rust-toolchain.toml (pinned 1.94.0) provide the compiler.
       # --locked builds the exact versions in Cargo.lock.
       - name: Build the site
