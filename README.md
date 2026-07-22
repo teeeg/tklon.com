@@ -8,7 +8,7 @@ S3/CloudFront.
 
 ```
 tklon.com
-├── .github/workflows/   --> deploy, new post, media processing
+├── .github/workflows/   --> build on PRs, deploy on master
 ├── Cargo.toml           --> workspace
 ├── Makefile             --> infra / publish / deploy / stats
 ├── deploy
@@ -50,23 +50,6 @@ and `tags` front matter. Images are native Markdown against a manifest name —
 Media is authored with `tklon images` and `tklon video`; see
 [`generator/README.md`](generator/README.md) for both commands and the full
 output format.
-
-## Posting from your phone
-
-A photo post needs no laptop — the whole loop is in the GitHub mobile app:
-
-1. **Actions → "new post" → title → Run** creates a dated branch, a stub with
-   today's date, and a draft PR.
-2. **Edit the post** in the PR: write prose, and drop `![alt text](@)` wherever a
-   photo goes — one `@` per photo, in order.
-3. **Attach the photos** to the PR description, in that same order.
-4. `process-media.yml` fills the `@` slots, encodes variants, backs up the
-   masters, commits the result, and keeps a sticky preview comment in sync.
-5. Green checks → **merge → live.**
-
-Photos go via attachments only, which GitHub caps at ~10 MB on the free plan.
-For video, encode on desktop with `tklon video`. HEIC isn't supported — iOS
-normally converts to JPEG on upload, and the run fails loudly if it doesn't.
 
 ## Deploying
 

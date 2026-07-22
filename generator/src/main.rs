@@ -7,11 +7,9 @@
 //!   tklon video [src]                  encode + upload video(s)
 //!   tklon video --check                verify sources match videos.json
 //!   tklon video --prune [--yes]        delete orphaned /media/ objects on S3
-//!   tklon ingest <post.md> <media…>    fill a post's `@` slots with attachments
 
 mod build;
 mod config;
-mod ingest;
 mod markdown;
 mod media;
 mod model;
@@ -19,7 +17,7 @@ mod serve;
 
 use model::Res;
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 fn main() {
     if let Err(e) = run() {
@@ -55,11 +53,6 @@ fn run() -> Res<()> {
                 let positional = args.get(2).filter(|a| !a.starts_with("--")).cloned();
                 media::video(&root, positional)
             }
-        }
-        "ingest" => {
-            let post = args.get(2).ok_or("usage: tklon ingest <post.md> <media…>")?;
-            let media: Vec<PathBuf> = args[3..].iter().map(PathBuf::from).collect();
-            ingest::ingest(&root, Path::new(post), &media)
         }
         other => Err(format!("unknown command '{other}' (build|serve|images|video)").into()),
     }

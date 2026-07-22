@@ -276,41 +276,6 @@ Resources:
                 Action: cloudfront:CreateInvalidation
                 Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontDistribution}"
 
-  # Least-privilege role for the media-processing workflow on PR branches: it can
-  # only back up masters/ — never deploy, mutate the site, or invalidate the CDN.
-  # Explicit RoleName so the ARN is predictable (referenced in process-media.yml).
-  GitHubActionsMediaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub "${AWS::StackName}-media-backup"
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Effect: Allow
-            Principal:
-              Federated: !Ref GitHubOidcProvider
-            Action: sts:AssumeRoleWithWebIdentity
-            Condition:
-              StringEquals:
-                token.actions.githubusercontent.com:aud: sts.amazonaws.com
-                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepositoryOwner}/${GitHubRepositoryName}:pull_request"
-              # Pin the role to this one workflow file, so another workflow added
-              # in a PR cannot assume it and bypass the post/* branch guard. The
-              # ref is wildcarded: pull_request runs report refs/pull/N/merge.
-              StringLike:
-                token.actions.githubusercontent.com:job_workflow_ref: !Sub "${GitHubRepositoryOwner}/${GitHubRepositoryName}/.github/workflows/process-media.yml@*"
-      Policies:
-        - PolicyName: BackupMasters
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Effect: Allow
-                Action: s3:ListBucket
-                Resource: !GetAtt WebsiteStaticAssetsBucket.Arn
-              - Effect: Allow
-                Action: s3:PutObject
-                Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/masters/*"
-
   # Email channel for the weekly stats report. Subscribing by email requires
   # the recipient to confirm via a link AWS sends on subscription creation —
   # the topic won't deliver until that's clicked once.
