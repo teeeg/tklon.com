@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Keep the GitHub-/AWS-official actions on the latest secure version, gated
+  # by a review PR. (Independent-maintainer actions are avoided entirely.)
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: weekly

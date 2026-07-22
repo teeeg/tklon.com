@@ -4,7 +4,19 @@ on:
   push:
     branches: [master]
     paths:
-      - "src/**"
+      - "site/**"
+      - "generator/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
+      - ".github/workflows/deploy.yml"
+  pull_request:
+    paths:
+      - "site/**"
+      - "generator/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "rust-toolchain.toml"
       - ".github/workflows/deploy.yml"
   workflow_dispatch:
 
@@ -14,38 +26,31 @@ permissions:
   contents: read
 
 concurrency:
-  group: deploy
+  group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+# Only GitHub-/AWS-official actions here — no independent-maintainer actions.
+# Dependabot keeps them on the latest secure version (.github/dependabot.yml).
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: src
     steps:
       - uses: actions/checkout@v4
 
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          working-directory: src
-          bundler-cache: true
+      # rustup + rust-toolchain.toml (pinned 1.94.0) provide the compiler.
+      # --locked builds the exact versions in Cargo.lock.
+      - name: Build the site
+        run: cargo run --release --locked -- build
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - run: npm install
-
-      - run: NO_CONTRACTS=true bundle exec middleman build
-
+      # Pull requests stop here: the build is the check, the deploy is not.
       - uses: aws-actions/configure-aws-credentials@v4
+        if: github.event_name != 'pull_request'
         with:
           role-to-assume: arn:aws:iam::295005258746:role/tklondotcom-GitHubActionsDeployRole-KmJpDGB6eg8r
           aws-region: us-east-1
 
       - name: Sync to S3 and invalidate CloudFront
+        if: github.event_name != 'pull_request'
         run: |
           # Two-pass sync so each bucket of files gets the right Cache-Control:
           #   1. Hashed/immutable assets (CSS, JS, images, fonts) — 1y immutable.
@@ -53,8 +58,8 @@ jobs:
           #      ships under a new URL; serving it forever is safe.
           #   2. HTML / feeds — short edge TTL with stale-while-revalidate, so
           #      users never wait on revalidation and updates land in ~5 min.
-          # --exclude 'media/*': self-hosted videos are uploaded out-of-band by
-          # `make video` and never live in build/; without this they'd be deleted.
+          # --exclude 'media/*': self-hosted videos are uploaded out-of-band and
+          # never live in build/; without this they'd be deleted.
           # Hashed assets ship first so HTML never references a missing file.
           aws s3 sync build/ s3://tklon.com-assets --delete --exclude 'media/*' \
             --exclude '*.html' --exclude '*.xml' --exclude '*.txt' \
