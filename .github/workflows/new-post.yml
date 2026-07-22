@@ -1,0 +1,49 @@
+name: new post
+
+# Scaffold a dated post + branch + draft PR. Run from the GitHub mobile app:
+# Actions → "new post" → enter a title → Run.
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Post title
+        required: true
+      tags:
+        description: Comma-separated tags (optional)
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  scaffold:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create post, branch, and draft PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ inputs.title }}
+          TAGS: ${{ inputs.tags }}
+        run: |
+          set -euo pipefail
+          today=$(date +%F)
+          year=$(date +%Y)
+          slug=$(printf '%s' "$TITLE" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g')
+          branch="post/$today-$slug"
+          file="site/source/posts/$year/$slug.md"
+
+          git switch -c "$branch"
+          mkdir -p "$(dirname "$file")"
+          DATE="$today" envsubst '$TITLE $DATE $TAGS' \
+            < .github/post-template.md > "$file"
+
+          git config user.name tklon-bot
+          git config user.email bot@users.noreply.github.com
+          git add "$file"
+          git commit -q -m "new post: $slug"
+          git push -u origin "$branch"
+          gh pr create --draft --head "$branch" --title "$TITLE" --body \
+            "Draft. Edit the file, then attach photos to this PR in the order the \`@\` slots appear — the bot wires them in and previews them here."
