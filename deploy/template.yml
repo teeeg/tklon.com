@@ -33,6 +33,16 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      # Archived video originals under masters/ are large and never served —
+      # move them to Glacier Instant Retrieval (still instant, far cheaper).
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveMastersToGlacierIR
+            Status: Enabled
+            Prefix: masters/
+            Transitions:
+              - StorageClass: GLACIER_IR
+                TransitionInDays: 1
 
   # Raw CloudFront access logs land here. CF standard logging writes via an
   # ACL grant to the awslogsdelivery group, which requires BucketOwnerPreferred
@@ -249,6 +259,36 @@ Resources:
               - Effect: Allow
                 Action: cloudfront:CreateInvalidation
                 Resource: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudfrontDistribution}"
+
+  # Least-privilege role for the media-processing workflow on PR branches: it can
+  # only back up masters/ — never deploy, mutate the site, or invalidate the CDN.
+  # Explicit RoleName so the ARN is predictable (referenced in process-media.yml).
+  GitHubActionsMediaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${AWS::StackName}-media-backup"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Ref GitHubOidcProvider
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub "repo:${GitHubRepositoryOwner}/${GitHubRepositoryName}:pull_request"
+      Policies:
+        - PolicyName: BackupMasters
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt WebsiteStaticAssetsBucket.Arn
+              - Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub "${WebsiteStaticAssetsBucket.Arn}/masters/*"
 
   # Email channel for the weekly stats report. Subscribing by email requires
   # the recipient to confirm via a link AWS sends on subscription creation —
