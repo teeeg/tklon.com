@@ -3,7 +3,7 @@
     <h1 class="visually-hidden">Recent posts</h1>
     {% for post in posts %}
     <section class="h-entry">
-      <h3>&rarr; <a class="u-url p-name" href="{{ post.url }}">{{ post.title | escape }}</a> </h3>
+      <h3>&rarr; <a class="u-url p-name" href="{{ post.url }}" style="view-transition-name: title-{{ post.slug }}; view-transition-class: vt-title">{{ post.title | escape }}</a> </h3>
       <div class="e-content">{{ post.body_html | safe }}</div>
       {{ post.date_short }}
       <em>tags:</em> {% for tag in post.tags %}<a href="/tags/?{{ tag }}" class="Tag p-category" data-tag="{{ tag }}">{{ tag }}</a> {% endfor %}

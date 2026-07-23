@@ -2,10 +2,10 @@
 {% block content %}
     <article class="h-entry">
       <header>
-        <h1 class="p-name">{{ post.title | escape }}</h1>
+        <h1 class="p-name" style="view-transition-name: title-{{ post.slug }}; view-transition-class: vt-title">{{ post.title | escape }}</h1>
         <p>
           <time class="dt-published" datetime="{{ post.date_iso }}">{{ post.date_long }}</time> -
-          <em>tags:</em> {% for tag in post.tags %}<a href="/tags/?{{ tag }}" class="Tag p-category" data-tag="{{ tag }}">{{ tag }}</a> {% endfor %}
+          <em>tags:</em> {% for tag in post.tags %}<a href="/tags/?{{ tag }}" class="Tag p-category" data-tag="{{ tag }}" style="view-transition-name: tag-{{ tag }}">{{ tag }}</a> {% endfor %}
         </p>
       </header>
       <div class="e-content">

@@ -39,6 +39,28 @@
   @view-transition {
     navigation: auto;
   }
+
+  // plain cross-fade for the page as a whole; the default also slides, which
+  // jumps on mobile Safari as the address bar resizes the viewport.
+  ::view-transition-old(root) { animation: vt-fade-out 0.25s both; }
+  ::view-transition-new(root) { animation: vt-fade-in 0.25s both; }
+
+  @keyframes vt-fade-out { to { opacity: 0; } }
+  @keyframes vt-fade-in { from { opacity: 0; } }
+
+  // titles morph between the list link and the article heading (index <-> post).
+  ::view-transition-group(.vt-title) {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+  }
+  // scale while keeping the text's proportions and top-left anchor, instead of
+  // stretching the snapshot between the small link and the large heading.
+  ::view-transition-old(.vt-title),
+  ::view-transition-new(.vt-title) {
+    height: 100%;
+    object-fit: contain;
+    object-position: left top;
+  }
 }
 
 html {
