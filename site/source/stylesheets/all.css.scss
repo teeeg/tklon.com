@@ -40,12 +40,18 @@
     navigation: auto;
   }
 
-  // plain cross-fade for the page as a whole; the default also slides, which
-  // jumps on mobile Safari as the address bar resizes the viewport.
-  ::view-transition-old(root) { animation: vt-fade-out 0.25s both; }
-  ::view-transition-new(root) { animation: vt-fade-in 0.25s both; }
+  // fade the incoming page in over the outgoing one, which stays fully opaque
+  // underneath. one solid layer always covers the viewport, so the backdrop
+  // never shows through mid-fade as a black flash (a symmetric cross-fade does).
+  // the default also slides, which jumps on mobile Safari as the address bar
+  // resizes the viewport.
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    mix-blend-mode: normal; // UA default is plus-lighter, tuned for a symmetric fade
+  }
+  ::view-transition-old(root) { animation: none; }
+  ::view-transition-new(root) { animation: vt-fade-in 0.3s both; }
 
-  @keyframes vt-fade-out { to { opacity: 0; } }
   @keyframes vt-fade-in { from { opacity: 0; } }
 
   // titles morph between the list link and the article heading (index <-> post).
