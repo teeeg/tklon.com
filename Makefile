@@ -16,16 +16,20 @@ ARTIFACTS_BUCKET ?= $(STACK)-cfn-artifacts
 PACKAGED_TEMPLATE := deploy/template.packaged.yml
 
 .DEFAULT_GOAL := help
-.PHONY: help fmt infra publish deploy stats
+.PHONY: help fmt e2e infra publish deploy stats
 
 help: ## List available targets
-	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
+	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | \
 	  awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-13s\033[0m %s\n", $$1, $$2}'
 
 fmt: ## Format Python (ruff) and Rust (cargo fmt)
 	@command -v uvx >/dev/null || { echo "uv not installed — see \`make stats\` for a hint"; exit 1; }
 	uvx ruff format deploy/lambda/
 	cargo fmt
+
+e2e: ## Build the site, then check its internal and external links (site/e2e)
+	cargo run -- build
+	cargo test -p e2e
 
 infra: ## Deploy/update the CloudFormation stack (also packages Lambda code)
 	@aws s3api head-bucket --bucket $(ARTIFACTS_BUCKET) --region $(REGION) 2>/dev/null \

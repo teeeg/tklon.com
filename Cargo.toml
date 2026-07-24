@@ -1,7 +1,10 @@
 # Workspace manifest so `cargo run -- <cmd>` works from the repo root.
-# The one member is the SSG crate in generator/ (which builds the `tklon` binary).
+# generator/ is the site-agnostic SSG (which builds the `tklon` binary);
+# site/e2e/ holds link checks for this particular site's built output.
+# default-members keeps bare `cargo run`/`cargo test` pointed at the generator,
+# so the e2e tests (which need a build/ and the network) are opt-in: `cargo test -p e2e`.
 [workspace]
-members = ["generator"]
+members = ["generator", "site/e2e"]
 resolver = "2"
 default-members = ["generator"]
 

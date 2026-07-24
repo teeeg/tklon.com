@@ -5,9 +5,10 @@
   white-space: nowrap;
 }
 
+// no opacity: it inherits the surrounding text color, which is already tuned
+// to pass AA, so any opacity here would only push it back below that
 .Tag:before {
   content: '#';
-  opacity: 0.6;
 }
 
 // Selected-tag highlight and dimming of non-matching articles are generated

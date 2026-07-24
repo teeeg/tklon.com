@@ -5,6 +5,7 @@ use crate::markdown::{description_from, esc, render_body};
 use crate::model::{
     load_images, load_videos, split_front_matter, Date, Images, Page, Post, Res, Videos,
 };
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tera::{Context, Tera};
@@ -24,10 +25,18 @@ pub fn build(root: &Path, out: &Path) -> Res<()> {
     all_tags.sort();
     all_tags.dedup();
 
-    if out.exists() {
-        fs::remove_dir_all(out)?;
+    // Stage the whole build in a sibling directory and swap it in at the end, so
+    // the dev server never serves from a half-written tree.
+    let staging = out.with_file_name(format!(
+        ".{}.staging",
+        out.file_name().and_then(|n| n.to_str()).unwrap_or("build")
+    ));
+    if staging.exists() {
+        fs::remove_dir_all(&staging)?;
     }
-    fs::create_dir_all(out)?;
+    fs::create_dir_all(&staging)?;
+    let published = out;
+    let out = staging.as_path();
 
     // ---- assets (content-hashed) ----
     let font_bytes = fs::read(source.join("fonts/hanken-grotesk.woff2"))?;
@@ -44,7 +53,7 @@ pub fn build(root: &Path, out: &Path) -> Res<()> {
     for tag in &all_tags {
         css.push_str(&format!(
             ":root[data-tags~=\"{t}\"] .Article:not(.{t}){{opacity:.15}}\
-:root[data-tags~=\"{t}\"] .Tag[data-tag=\"{t}\"]{{background:var(--accent);color:#fff}}",
+:root[data-tags~=\"{t}\"] .Tag[data-tag=\"{t}\"]{{background:var(--accent);color:var(--bg)}}",
             t = tag
         ));
     }
@@ -143,20 +152,48 @@ pub fn build(root: &Path, out: &Path) -> Res<()> {
         ctx.insert("description", &cfg.description);
         ctx.insert("canonical", &format!("{}/404.html", cfg.base_url));
         ctx.insert("page_classes", "x404");
-        fs::write(out.join("404.html"), minify(&tera.render("notfound.html", &ctx)?))?;
+        fs::write(
+            out.join("404.html"),
+            minify(&tera.render("notfound.html", &ctx)?),
+        )?;
     }
 
     // ---- feed + media ----
     fs::write(out.join("feed.xml"), render_feed(&posts, &cfg))?;
     copy_dir(&source.join("images"), &out.join("images"))?;
 
+    if published.exists() {
+        fs::remove_dir_all(published)?;
+    }
+    fs::rename(&staging, published)?;
+
     println!(
         "built {} posts + {} index pages → {}",
         posts.len(),
         total,
-        out.display()
+        published.display()
     );
     Ok(())
+}
+
+/// Normalize to `[a-z0-9-]+`. Slugs and tags end up in URLs, class names, CSS
+/// attribute selectors and `view-transition-name` idents, so they are made safe
+/// once here rather than escaped differently at each use site.
+fn ident(s: &str) -> String {
+    let mut out = String::new();
+    for c in s.chars() {
+        if c.is_ascii_alphanumeric() {
+            out.push(c.to_ascii_lowercase());
+        } else if !out.is_empty() && !out.ends_with('-') {
+            out.push('-');
+        }
+    }
+    let out = out.trim_end_matches('-');
+    // a CSS identifier may not start with a digit
+    match out.chars().next() {
+        Some(c) if c.is_ascii_digit() => format!("t-{out}"),
+        _ => out.to_string(),
+    }
 }
 
 // ---- post loading ---------------------------------------------------------
@@ -198,7 +235,8 @@ fn load_pages(dir: &Path, images: &Images, videos: &Videos) -> Res<Vec<Page>> {
             .and_then(|n| n.to_str())
             .ok_or("bad page filename")?
             .to_string();
-        let body_html = render_body(&body, images, videos)?;
+        // A standalone page is alone in its document, so ids can't collide.
+        let body_html = render_body(&body, images, videos, true)?;
         let description = description_from(&body_html);
         pages.push(Page {
             title: fm.get("title").cloned().unwrap_or_else(|| slug.clone()),
@@ -224,7 +262,13 @@ fn collect_post_files(dir: &Path, acc: &mut Vec<PathBuf>) -> Res<()> {
     Ok(())
 }
 
-fn load_post(root: &Path, path: &Path, images: &Images, videos: &Videos, cfg: &Config) -> Res<Post> {
+fn load_post(
+    root: &Path,
+    path: &Path,
+    images: &Images,
+    videos: &Videos,
+    cfg: &Config,
+) -> Res<Post> {
     let raw = fs::read_to_string(path)?;
     let (fm, body) = split_front_matter(&raw);
     let title = fm.get("title").cloned().unwrap_or_default();
@@ -232,25 +276,28 @@ fn load_post(root: &Path, path: &Path, images: &Images, videos: &Videos, cfg: &C
         fm.get("date")
             .ok_or_else(|| format!("{}: missing date", path.display()))?,
     )?;
-    let tags = fm
+    let mut tags: Vec<String> = fm
         .get("tags")
         .map(|t| {
             t.split(',')
-                .map(|s| s.trim().to_string())
+                .map(ident)
                 .filter(|s| !s.is_empty())
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
+    let mut seen = HashSet::new();
+    tags.retain(|t| seen.insert(t.clone()));
 
     let filename = path
         .file_name()
         .and_then(|n| n.to_str())
         .ok_or("bad post filename")?;
-    let slug = filename.trim_end_matches(".md").to_string();
+    let slug = ident(filename.trim_end_matches(".md"));
     let permalink = date.permalink(&slug);
     let url = format!("/posts/{permalink}/");
 
-    let body_html = render_body(&body, images, videos)?;
+    let body_html = render_body(&body, images, videos, true)?;
+    let body_html_index = render_body(&body, images, videos, false)?;
     let description = description_from(&body_html);
 
     let rel = path.strip_prefix(root).unwrap_or(path).to_string_lossy();
@@ -263,6 +310,7 @@ fn load_post(root: &Path, path: &Path, images: &Images, videos: &Videos, cfg: &C
         url,
         tags,
         body_html,
+        body_html_index,
         description,
         edit_url,
         date_iso: date.iso(),
@@ -294,7 +342,10 @@ fn render_feed(posts: &[Post], cfg: &Config) -> String {
     s.push_str("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
     s.push_str("<feed xmlns=\"http://www.w3.org/2005/Atom\">\n");
     s.push_str(&format!("  <title>{}</title>\n", esc(&cfg.name)));
-    s.push_str(&format!("  <subtitle>{}</subtitle>\n", esc(&cfg.description)));
+    s.push_str(&format!(
+        "  <subtitle>{}</subtitle>\n",
+        esc(&cfg.description)
+    ));
     s.push_str(&format!(
         "  <link href=\"{}/feed.xml\" rel=\"self\"/>\n",
         cfg.base_url
@@ -309,11 +360,7 @@ fn render_feed(posts: &[Post], cfg: &Config) -> String {
     for p in posts {
         s.push_str("  <entry>\n");
         s.push_str(&format!("    <title>{}</title>\n", esc(&p.title)));
-        s.push_str(&format!(
-            "    <link href=\"{}{}\"/>\n",
-            cfg.base_url,
-            p.url
-        ));
+        s.push_str(&format!("    <link href=\"{}{}\"/>\n", cfg.base_url, p.url));
         s.push_str(&format!("    <id>{}{}</id>\n", cfg.base_url, p.url));
         s.push_str(&format!("    <published>{}</published>\n", p.date_rfc3339));
         s.push_str(&format!("    <updated>{}</updated>\n", p.date_rfc3339));
@@ -387,4 +434,56 @@ fn fnv(bytes: &[u8]) -> String {
         h = h.wrapping_mul(0x0000_0100_0000_01b3);
     }
     format!("{:08x}", h as u32)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // `ident` feeds permalinks and URLs, so a change here silently rewrites
+    // every post's address. These pin the existing slugs in particular.
+    #[test]
+    fn ident_leaves_wellformed_slugs_untouched() {
+        for s in [
+            "sous-vide-yogurt",
+            "may-reads",
+            "tio-mike",
+            "speedbox-bosch",
+            "cooking",
+        ] {
+            assert_eq!(ident(s), s, "{s} must survive unchanged or its URL moves");
+        }
+    }
+
+    #[test]
+    fn ident_lowercases_and_joins_words() {
+        assert_eq!(ident("Home Cooking"), "home-cooking");
+        assert_eq!(ident("Sous  Vide"), "sous-vide");
+    }
+
+    #[test]
+    fn ident_strips_css_and_html_metacharacters() {
+        // The cases that made the raw-interpolation bugs reachable: a quote
+        // broke out of an attribute, a `;` injected a CSS declaration.
+        assert_eq!(ident("a; background:red"), "a-background-red");
+        assert_eq!(
+            ident("q\" onmouseover=alert(1) x=\""),
+            "q-onmouseover-alert-1-x"
+        );
+        assert_eq!(ident("book/film"), "book-film");
+    }
+
+    #[test]
+    fn ident_never_starts_with_a_digit() {
+        // A CSS identifier may not begin with a digit, so these get a prefix.
+        assert_eq!(ident("2026 reads"), "t-2026-reads");
+        assert_eq!(ident("35mm"), "t-35mm");
+    }
+
+    #[test]
+    fn ident_trims_separators_at_both_ends() {
+        assert_eq!(ident("  spaced  "), "spaced");
+        assert_eq!(ident("--dashes--"), "dashes");
+        assert_eq!(ident("!!!"), "");
+    }
 }

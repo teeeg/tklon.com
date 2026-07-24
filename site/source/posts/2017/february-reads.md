@@ -18,7 +18,7 @@ A tale of friendship and adolescence based in southern California narrated from 
 
 > He liked to refer to his whiteness the way all white liberals did: only acknowledging it when he felt oppressed by it, otherwise pretending it didn’t exist.
 
-I really enjoyed [this article's](http://news.nationalpost.com/arts/books/book-reviews/brit-bennetts-haunting-the-mothers-portrays-female-friendship-and-a-love-triangle-that-moves-in-all-directions) interpretation: 
+I really enjoyed [this article's](https://nationalpost.com/entertainment/books/book-reviews/brit-bennetts-haunting-the-mothers-portrays-female-friendship-and-a-love-triangle-that-moves-in-all-directions) interpretation: 
 
 > The Mothers moves around those expectations, simply by setting the story in a world where whiteness is adjacent, but not invisible. Most of the characters are aware that they are, in fact, shadowed by whiteness. But the book denies that form, while acknowledging its veracity..
 
@@ -38,4 +38,4 @@ One idea I was unaware of is the concept of [zillionics](http://kk.org/thetechni
 
 It reminds me of dynamic systems in chaos theory where apparent randomness and unpredictability is deterministic. I wonder if the computational all-knowing power of machines will allow us to extract meaning from what was previously insignificant. 
 
-We can never predict the future. No one was sketching the likeness of the internet 60 years ago -- cars and its iterative future the flying car dominating the future-scapes. I think of Kelly's writings more as fuel for current projects -- is there a tangent in these ideas that fascinates? Maybe these ideas are source material for ideas that diverge from the current status quo. 
+We can never predict the future. No one was sketching the likeness of the internet 60 years ago -- cars and its iterative future the flying car dominating the future-scapes. I think of Kelly's writings more as fuel for current projects -- is there a tangent in these ideas that fascinates? Maybe these ideas are source material for ideas that diverge from the current status quo.

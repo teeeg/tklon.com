@@ -16,7 +16,9 @@ cargo run -- serve --port 8080
 cargo install --path generator    # then call `tklon` directly
 ```
 
-`serve` builds once, then polls `site/source/` and `site/data/` every 500ms.
+`serve` builds once, then polls `site/source/`, `site/data/`, `site/templates/`
+and `site/config.yml` every 500ms. Each build is staged in a sibling directory
+and swapped in, so a request landing mid-rebuild never sees a half-written tree.
 
 ## What it generates
 
@@ -24,7 +26,7 @@ cargo install --path generator    # then call `tklon` directly
 - Permalinks `posts/{slug}-{ddmmyyyy}/`, a tag filter page, a 404
 - Atom `feed.xml`, `h-entry`/`h-card` microformats, `rel="me"`
 - Kramdown-compatible heading ids, smart punctuation, inline-SVG pass-through
-- SCSS compiled in-binary via `grass`; content-hashed CSS, JS and font
+- SCSS compiled in-binary via `grass`; content-hashed CSS and font
 
 ## Authoring format
 

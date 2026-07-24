@@ -24,19 +24,27 @@ pub fn esc(s: &str) -> String {
 
 /// Render a post body: expand block shortcodes, then markdown → HTML (with
 /// bare-name image links turned into responsive figures).
-pub fn render_body(body: &str, images: &Images, videos: &Videos) -> Res<String> {
+/// `heading_ids` must be false when the result shares a document with other
+/// bodies. Ids are unique within one body, but the index renders several posts
+/// into one page, where two posts sharing a heading would collide — and an id
+/// is only meaningful at the post's own URL anyway.
+pub fn render_body(body: &str, images: &Images, videos: &Videos, heading_ids: bool) -> Res<String> {
     let expanded = expand_block_shortcodes(body, images, videos)?;
-    render_markdown(&expanded, images)
+    render_markdown(&expanded, images, heading_ids)
 }
 
-fn render_markdown(md: &str, images: &Images) -> Res<String> {
+fn render_markdown(md: &str, images: &Images, heading_ids: bool) -> Res<String> {
     let protected = protect_svg(md);
     let mut opts = Options::empty();
     opts.insert(Options::ENABLE_SMART_PUNCTUATION);
     let events: Vec<Event> = Parser::new_ext(&protected, opts).collect();
 
     let events = transform_images(events, images)?;
-    let events = inject_heading_ids(events);
+    let events = if heading_ids {
+        inject_heading_ids(events)
+    } else {
+        events
+    };
 
     let mut out = String::new();
     html::push_html(&mut out, events.into_iter());
@@ -71,7 +79,10 @@ fn try_image_paragraph(
     start: usize,
     images: &Images,
 ) -> Res<Option<(String, usize)>> {
-    let Some(Event::Start(Tag::Image { dest_url, title, .. })) = events.get(start + 1) else {
+    let Some(Event::Start(Tag::Image {
+        dest_url, title, ..
+    })) = events.get(start + 1)
+    else {
         return Ok(None);
     };
     // Only bare manifest names (no path, scheme, or extension) are ours.
@@ -111,7 +122,11 @@ fn image_html(name: &str, alt: &str, caption: Option<&str>, images: &Images) -> 
     let sizes = "(min-width: 750px) 750px, 100vw";
     let digest = &meta.digest;
     let max_w = *meta.widths.iter().max().unwrap_or(&750);
-    let fallback = if meta.widths.contains(&750) { 750 } else { max_w };
+    let fallback = if meta.widths.contains(&750) {
+        750
+    } else {
+        max_w
+    };
     let srcset = |ext: &str| {
         meta.widths
             .iter()
@@ -181,7 +196,13 @@ fn inject_heading_ids(mut events: Vec<Event>) -> Vec<Event> {
             }
         }
         let slug = unique_slug(&mut counts, &kramdown_slug(&text));
-        if let Event::Start(Tag::Heading { level, classes, attrs, .. }) = events[i].clone() {
+        if let Event::Start(Tag::Heading {
+            level,
+            classes,
+            attrs,
+            ..
+        }) = events[i].clone()
+        {
             events[i] = Event::Start(Tag::Heading {
                 level,
                 id: Some(CowStr::from(slug)),
@@ -307,7 +328,10 @@ fn video_html(name: &str, caption: Option<&str>, images: &Images, videos: &Video
         .get(name)
         .ok_or_else(|| format!("unknown video '{name}' in videos.json"))?;
     let poster = images.get(&meta.poster).ok_or_else(|| {
-        format!("video '{name}' poster '{}' missing from images.json", meta.poster)
+        format!(
+            "video '{name}' poster '{}' missing from images.json",
+            meta.poster
+        )
     })?;
     let figcaption = caption
         .map(|c| format!("<figcaption>{}</figcaption>", esc(c)))
@@ -346,7 +370,11 @@ fn parse_attrs(s: &str) -> Vec<(String, String)> {
     let mut attrs = Vec::new();
     let mut rest = s.trim();
     while let Some(eq) = rest.find('=') {
-        let key = rest[..eq].split_whitespace().last().unwrap_or("").to_string();
+        let key = rest[..eq]
+            .split_whitespace()
+            .last()
+            .unwrap_or("")
+            .to_string();
         let after = rest[eq + 1..].trim_start();
         let Some(quoted) = after.strip_prefix('"') else {
             break;
@@ -412,7 +440,10 @@ mod tests {
     #[test]
     fn slug_no_dash_collapsing() {
         // " - " becomes three dashes: space, literal '-', space → "---".
-        assert_eq!(kramdown_slug("Yaa Gyasi - Home Going"), "yaa-gyasi---home-going");
+        assert_eq!(
+            kramdown_slug("Yaa Gyasi - Home Going"),
+            "yaa-gyasi---home-going"
+        );
     }
 
     #[test]
@@ -514,19 +545,13 @@ mod tests {
 
     #[test]
     fn description_collapses_whitespace() {
-        assert_eq!(
-            description_from("<p>a   b\n\tc</p>"),
-            "a b c"
-        );
+        assert_eq!(description_from("<p>a   b\n\tc</p>"), "a b c");
     }
 
     #[test]
     fn description_no_leading_heading_keeps_text() {
         // A heading that isn't at the very start is not stripped.
-        assert_eq!(
-            description_from("<p>lead</p><h2>later</h2>"),
-            "lead later"
-        );
+        assert_eq!(description_from("<p>lead</p><h2>later</h2>"), "lead later");
     }
 
     #[test]
@@ -603,5 +628,35 @@ mod tests {
             &Default::default(),
         );
         assert!(out.is_err());
+    }
+}
+
+#[cfg(test)]
+mod heading_id_tests {
+    use super::*;
+
+    fn render(md: &str, heading_ids: bool) -> String {
+        render_body(md, &Images::default(), &Videos::default(), heading_ids).unwrap()
+    }
+
+    #[test]
+    fn heading_ids_are_emitted_for_a_standalone_body() {
+        assert!(render("## Impressions\n", true).contains(r#"id="impressions""#));
+    }
+
+    #[test]
+    fn heading_ids_are_omitted_when_the_body_shares_a_document() {
+        // The index renders several posts into one page. Two posts with the
+        // same heading would otherwise both emit id="impressions".
+        let html = render("## Impressions\n", false);
+        assert!(html.contains("<h2>"), "heading should still render: {html}");
+        assert!(!html.contains("id="), "no ids in a shared document: {html}");
+    }
+
+    #[test]
+    fn repeated_headings_within_one_body_still_disambiguate() {
+        let html = render("## Notes\n\ntext\n\n## Notes\n", true);
+        assert!(html.contains(r#"id="notes""#));
+        assert!(html.contains(r#"id="notes-1""#));
     }
 }

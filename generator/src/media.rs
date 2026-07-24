@@ -109,11 +109,22 @@ pub fn images(root: &Path) -> Res<()> {
         println!(
             "✓ {name}  ({nw}×{nh}) → {} px  [{digest}]{}",
             join_widths(&widths),
-            camera.as_deref().map(|c| format!("  · {c}")).unwrap_or_default()
+            camera
+                .as_deref()
+                .map(|c| format!("  · {c}"))
+                .unwrap_or_default()
         );
         manifest.insert(
             name,
-            ImageMeta { width: nw, height: nh, widths, digest, thumbhash, camera, settings },
+            ImageMeta {
+                width: nw,
+                height: nh,
+                widths,
+                digest,
+                thumbhash,
+                camera,
+                settings,
+            },
         );
     }
 
@@ -142,7 +153,15 @@ fn backup_masters(dir: &Path, bucket: &str) {
     }
     let dest = format!("s3://{bucket}/masters/");
     let ok = Command::new("aws")
-        .args(["s3", "sync", &dir.to_string_lossy(), &dest, "--size-only", "--exclude", ".*"])
+        .args([
+            "s3",
+            "sync",
+            &dir.to_string_lossy(),
+            &dest,
+            "--size-only",
+            "--exclude",
+            ".*",
+        ])
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
@@ -160,7 +179,9 @@ fn backup_masters(dir: &Path, bucket: &str) {
 /// Decode an image, bake in EXIF orientation, and return it with its
 /// (orientation-corrected) intrinsic dimensions.
 fn decode_oriented(path: &Path) -> Res<(DynamicImage, u32, u32)> {
-    let mut decoder = ImageReader::open(path)?.with_guessed_format()?.into_decoder()?;
+    let mut decoder = ImageReader::open(path)?
+        .with_guessed_format()?
+        .into_decoder()?;
     let orientation = decoder.orientation().unwrap_or(Orientation::NoTransforms);
     let mut img = DynamicImage::from_decoder(decoder)?;
     img.apply_orientation(orientation);
@@ -171,7 +192,10 @@ fn decode_oriented(path: &Path) -> Res<(DynamicImage, u32, u32)> {
 fn encode_avif(img: &DynamicImage) -> Res<Vec<u8>> {
     let rgb = img.to_rgb8();
     let (w, h) = (rgb.width() as usize, rgb.height() as usize);
-    let pixels: Vec<rgb::RGB8> = rgb.pixels().map(|p| rgb::RGB8::new(p[0], p[1], p[2])).collect();
+    let pixels: Vec<rgb::RGB8> = rgb
+        .pixels()
+        .map(|p| rgb::RGB8::new(p[0], p[1], p[2]))
+        .collect();
     let encoded = ravif::Encoder::new()
         .with_quality(AVIF_QUALITY)
         .with_speed(AVIF_SPEED)
@@ -217,7 +241,9 @@ fn read_exif(bytes: &[u8]) -> (Option<String>, Option<String>) {
     let camera = combine_camera(field(exif::Tag::Make), field(exif::Tag::Model));
 
     let mut parts = Vec::new();
-    if let Some(f) = field(exif::Tag::FocalLengthIn35mmFilm).or_else(|| field(exif::Tag::FocalLength)) {
+    if let Some(f) =
+        field(exif::Tag::FocalLengthIn35mmFilm).or_else(|| field(exif::Tag::FocalLength))
+    {
         parts.push(format!("{f} mm"));
     }
     if let Some(f) = field(exif::Tag::FNumber) {
@@ -281,7 +307,9 @@ pub fn video(root: &Path, positional: Option<String>) -> Res<()> {
                     .filter(|p| has_ext(p, &VIDEO_EXTS))
                     .filter_map(|p| p.file_name().and_then(|n| n.to_str()).map(String::from))
                     .collect(),
-                Err(_) => return Err(format!("no video directory at {}", video_dir.display()).into()),
+                Err(_) => {
+                    return Err(format!("no video directory at {}", video_dir.display()).into())
+                }
             };
             v.sort();
             if v.is_empty() {
@@ -326,14 +354,31 @@ fn process_video(site: &Path, video_dir: &Path, file: &str, bucket: &str) -> Res
     // 1. Encode to a temp name, then content-hash → final name.
     let tmp = out_dir.join(format!("{name}.tmp.mp4"));
     println!("→ encoding {file}");
-    run("ffmpeg", &[
-        "-y", "-i", input.to_str().unwrap(),
-        "-vf", SCALE,
-        "-c:v", "libx264", "-crf", "23", "-preset", "slow", "-pix_fmt", "yuv420p",
-        "-movflags", "+faststart",
-        "-c:a", "aac", "-b:a", "128k",
-        tmp.to_str().unwrap(),
-    ])?;
+    run(
+        "ffmpeg",
+        &[
+            "-y",
+            "-i",
+            input.to_str().unwrap(),
+            "-vf",
+            SCALE,
+            "-c:v",
+            "libx264",
+            "-crf",
+            "23",
+            "-preset",
+            "slow",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            tmp.to_str().unwrap(),
+        ],
+    )?;
     let hash = sha256_prefix(&fs::read(&tmp)?, 8);
     let final_name = format!("{name}-{hash}.mp4");
     let final_path = out_dir.join(&final_name);
@@ -341,11 +386,25 @@ fn process_video(site: &Path, video_dir: &Path, file: &str, bucket: &str) -> Res
 
     // 2. Poster frame (small seek + thumbnail dodges fade-in/black frames).
     let poster = format!("{name}-poster");
-    run("ffmpeg", &[
-        "-y", "-ss", "1", "-i", input.to_str().unwrap(),
-        "-vf", "thumbnail", "-frames:v", "1", "-q:v", "2", "-update", "1",
-        poster_dir.join(format!("{poster}.jpg")).to_str().unwrap(),
-    ])?;
+    run(
+        "ffmpeg",
+        &[
+            "-y",
+            "-ss",
+            "1",
+            "-i",
+            input.to_str().unwrap(),
+            "-vf",
+            "thumbnail",
+            "-frames:v",
+            "1",
+            "-q:v",
+            "2",
+            "-update",
+            "1",
+            poster_dir.join(format!("{poster}.jpg")).to_str().unwrap(),
+        ],
+    )?;
 
     // 3. Probe the ENCODED file so dims match what's actually served.
     let (width, height, duration) = probe(&final_path)?;
@@ -354,12 +413,19 @@ fn process_video(site: &Path, video_dir: &Path, file: &str, bucket: &str) -> Res
     // untouched master is backed up by the backup_masters sync that closes
     // `tklon images`, which this command runs once every source is encoded.
     println!("→ uploading {final_name}");
-    run("aws", &[
-        "s3", "cp", final_path.to_str().unwrap(),
-        &format!("s3://{bucket}/media/{final_name}"),
-        "--content-type", "video/mp4",
-        "--cache-control", "public, max-age=31536000, immutable",
-    ])?;
+    run(
+        "aws",
+        &[
+            "s3",
+            "cp",
+            final_path.to_str().unwrap(),
+            &format!("s3://{bucket}/media/{final_name}"),
+            "--content-type",
+            "video/mp4",
+            "--cache-control",
+            "public, max-age=31536000, immutable",
+        ],
+    )?;
 
     // 5. Record in the committed manifest only after a successful upload.
     manifest.insert(
@@ -380,12 +446,22 @@ fn process_video(site: &Path, video_dir: &Path, file: &str, bucket: &str) -> Res
 
 /// ffprobe the encoded file for stream width/height and format duration.
 fn probe(path: &Path) -> Res<(u64, u64, f64)> {
-    let out = run_capture("ffprobe", &[
-        "-v", "error", "-select_streams", "v:0",
-        "-show_entries", "stream=width,height",
-        "-show_entries", "format=duration",
-        "-of", "json", path.to_str().unwrap(),
-    ])?;
+    let out = run_capture(
+        "ffprobe",
+        &[
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=width,height",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "json",
+            path.to_str().unwrap(),
+        ],
+    )?;
     let v: serde_json::Value = serde_json::from_str(&out)?;
     let stream = &v["streams"][0];
     let width = stream["width"].as_u64().ok_or("ffprobe: no width")?;
@@ -425,7 +501,10 @@ pub fn check_videos(root: &Path) -> Res<()> {
 
     let mut problems = Vec::new();
     for path in &sources {
-        let file = path.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+        let file = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default();
         let name = strip_known_ext(file, &VIDEO_EXTS);
         let Some(entry) = manifest.get(&name) else {
             problems.push(format!("  {file} → no entry in data/videos.json"));
@@ -434,16 +513,21 @@ pub fn check_videos(root: &Path) -> Res<()> {
         match entry.get("sourceHash").and_then(|h| h.as_str()) {
             Some(recorded) => {
                 if sha256_prefix(&fs::read(path)?, 16) != recorded {
-                    problems.push(format!("  {file} → content differs from last encode (sourceHash mismatch)"));
+                    problems.push(format!(
+                        "  {file} → content differs from last encode (sourceHash mismatch)"
+                    ));
                 }
             }
             None => {
                 // Legacy entry: fall back to mtime (weaker but still catches edits).
-                if let (Ok(src_m), Some(man_m)) =
-                    (fs::metadata(path).and_then(|m| m.modified()), manifest_mtime)
-                {
+                if let (Ok(src_m), Some(man_m)) = (
+                    fs::metadata(path).and_then(|m| m.modified()),
+                    manifest_mtime,
+                ) {
                     if src_m > man_m {
-                        problems.push(format!("  {file} → modified since last encode (source newer than manifest)"));
+                        problems.push(format!(
+                            "  {file} → modified since last encode (source newer than manifest)"
+                        ));
                     }
                 }
             }
@@ -475,10 +559,21 @@ pub fn prune(root: &Path, yes: bool) -> Res<()> {
         .filter_map(|v| v.get("src").and_then(|s| s.as_str()))
         .collect();
 
-    let listing = run_capture("aws", &[
-        "s3api", "list-objects-v2", "--bucket", &bucket, "--prefix", "media/",
-        "--query", "Contents[].Key", "--output", "text",
-    ])?;
+    let listing = run_capture(
+        "aws",
+        &[
+            "s3api",
+            "list-objects-v2",
+            "--bucket",
+            &bucket,
+            "--prefix",
+            "media/",
+            "--query",
+            "Contents[].Key",
+            "--output",
+            "text",
+        ],
+    )?;
     let listing = listing.trim();
     let keys: Vec<&str> = if listing.is_empty() || listing == "None" {
         Vec::new()
@@ -501,7 +596,10 @@ pub fn prune(root: &Path, yes: bool) -> Res<()> {
         println!("  {o}");
     }
     if !yes {
-        println!("\nre-run with `--prune --yes` to delete the {} object(s) above.", orphans.len());
+        println!(
+            "\nre-run with `--prune --yes` to delete the {} object(s) above.",
+            orphans.len()
+        );
         return Ok(());
     }
     for o in &orphans {
@@ -516,7 +614,10 @@ pub fn prune(root: &Path, yes: bool) -> Res<()> {
 // ===========================================================================
 
 fn run(cmd: &str, args: &[&str]) -> Res<()> {
-    let status = Command::new(cmd).args(args).status().map_err(|e| map_spawn_err(cmd, e))?;
+    let status = Command::new(cmd)
+        .args(args)
+        .status()
+        .map_err(|e| map_spawn_err(cmd, e))?;
     if !status.success() {
         return Err(format!("{cmd} exited with {status}").into());
     }
@@ -524,7 +625,10 @@ fn run(cmd: &str, args: &[&str]) -> Res<()> {
 }
 
 fn run_capture(cmd: &str, args: &[&str]) -> Res<String> {
-    let output = Command::new(cmd).args(args).output().map_err(|e| map_spawn_err(cmd, e))?;
+    let output = Command::new(cmd)
+        .args(args)
+        .output()
+        .map_err(|e| map_spawn_err(cmd, e))?;
     if !output.status.success() {
         return Err(format!(
             "{cmd} exited with {}\n{}",
@@ -565,7 +669,11 @@ fn has_ext(path: &Path, exts: &[&str]) -> bool {
 }
 
 fn stem(path: &Path) -> Res<String> {
-    Ok(path.file_stem().and_then(|s| s.to_str()).ok_or("bad filename")?.to_string())
+    Ok(path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or("bad filename")?
+        .to_string())
 }
 
 fn strip_known_ext(file: &str, exts: &[&str]) -> String {
@@ -578,7 +686,11 @@ fn strip_known_ext(file: &str, exts: &[&str]) -> String {
 }
 
 fn join_widths(widths: &[u32]) -> String {
-    widths.iter().map(|w| w.to_string()).collect::<Vec<_>>().join(", ")
+    widths
+        .iter()
+        .map(|w| w.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 #[cfg(test)]
@@ -646,12 +758,18 @@ mod tests {
 
     #[test]
     fn combine_camera_model_only() {
-        assert_eq!(combine_camera(None, Some("X100V".into())), Some("X100V".into()));
+        assert_eq!(
+            combine_camera(None, Some("X100V".into())),
+            Some("X100V".into())
+        );
     }
 
     #[test]
     fn combine_camera_make_only() {
-        assert_eq!(combine_camera(Some("Canon".into()), None), Some("Canon".into()));
+        assert_eq!(
+            combine_camera(Some("Canon".into()), None),
+            Some("Canon".into())
+        );
     }
 
     #[test]

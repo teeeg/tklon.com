@@ -41,7 +41,7 @@ The graph below shows the general approach, where time and temperature are not a
 
   <!-- inoculate: starter goes in once the curve has cooled to 110°F. Dot sits
        a bit right of the elbow so the smooth curve→flat join stays visible. -->
-  <circle cx="220" cy="152" r="3.5" fill="#fff" stroke="#c0392b" stroke-width="1.5"/>
+  <circle cx="220" cy="152" r="3.5" fill="var(--bg)" stroke="#c0392b" stroke-width="1.5"/>
 
   <!-- point labels -->
   <text x="128" y="40"  text-anchor="middle" font-size="11" fill="currentColor">denature</text>

@@ -73,7 +73,9 @@ fn find_root() -> Res<PathBuf> {
             return Ok(dir);
         }
         if !dir.pop() {
-            return Err("could not find repo root (looked for site/source/ upward from cwd)".into());
+            return Err(
+                "could not find repo root (looked for site/source/ upward from cwd)".into(),
+            );
         }
     }
 }

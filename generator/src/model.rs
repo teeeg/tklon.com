@@ -36,7 +36,13 @@ impl Date {
             hour = hm.next().unwrap_or("0").parse().unwrap_or(0);
             min = hm.next().unwrap_or("0").parse().unwrap_or(0);
         }
-        Ok(Date { year, month, day, hour, min })
+        Ok(Date {
+            year,
+            month,
+            day,
+            hour,
+            min,
+        })
     }
 
     /// Sortable key (reverse-chronological ordering sorts on this descending).
@@ -58,7 +64,12 @@ impl Date {
     }
     /// strftime %D — 10/26/15
     pub fn short(&self) -> String {
-        format!("{:02}/{:02}/{:02}", self.month, self.day, self.year.rem_euclid(100))
+        format!(
+            "{:02}/{:02}/{:02}",
+            self.month,
+            self.day,
+            self.year.rem_euclid(100)
+        )
     }
     /// strftime "%b %Y" — Oct 2015
     pub fn month_year(&self) -> String {
@@ -86,6 +97,9 @@ pub struct Post {
     pub url: String,
     pub tags: Vec<String>,
     pub body_html: String,
+    /// Same body, minus heading ids, for the index — which puts several posts
+    /// in one document, where those ids would collide.
+    pub body_html_index: String,
     pub description: String,
     pub edit_url: String,
     pub date_iso: String,
@@ -151,7 +165,9 @@ pub fn load_videos(path: &Path) -> Res<Videos> {
 /// Returns (fields, body). Only simple `key: value` lines are supported.
 pub fn split_front_matter(raw: &str) -> (BTreeMap<String, String>, String) {
     let mut fields = BTreeMap::new();
-    let stripped = raw.strip_prefix("---\n").or_else(|| raw.strip_prefix("---\r\n"));
+    let stripped = raw
+        .strip_prefix("---\n")
+        .or_else(|| raw.strip_prefix("---\r\n"));
     let Some(rest) = stripped else {
         return (fields, raw.to_string());
     };
@@ -183,7 +199,10 @@ mod tests {
     #[test]
     fn parse_full_datetime() {
         let d = Date::parse("2015-10-26 05:36 UTC").unwrap();
-        assert_eq!((d.year, d.month, d.day, d.hour, d.min), (2015, 10, 26, 5, 36));
+        assert_eq!(
+            (d.year, d.month, d.day, d.hour, d.min),
+            (2015, 10, 26, 5, 36)
+        );
     }
 
     #[test]
@@ -195,7 +214,10 @@ mod tests {
     #[test]
     fn parse_trims_surrounding_whitespace() {
         let d = Date::parse("  2015-10-26 05:36 UTC  ").unwrap();
-        assert_eq!((d.year, d.month, d.day, d.hour, d.min), (2015, 10, 26, 5, 36));
+        assert_eq!(
+            (d.year, d.month, d.day, d.hour, d.min),
+            (2015, 10, 26, 5, 36)
+        );
     }
 
     #[test]
@@ -291,6 +313,9 @@ mod tests {
         // split_once(':') means only the first colon delimits key/value.
         let raw = "---\nurl: https://example.com\n---\nbody\n";
         let (fields, _) = split_front_matter(raw);
-        assert_eq!(fields.get("url").map(String::as_str), Some("https://example.com"));
+        assert_eq!(
+            fields.get("url").map(String::as_str),
+            Some("https://example.com")
+        );
     }
 }

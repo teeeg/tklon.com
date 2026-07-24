@@ -8,7 +8,7 @@ S3/CloudFront.
 
 ```
 tklon.com
-├── .github/workflows/   --> build on PRs, deploy on master
+├── .github/workflows/   --> build + test on PRs, deploy on master
 ├── Cargo.toml           --> workspace
 ├── Makefile             --> infra / publish / deploy / stats
 ├── deploy
@@ -16,11 +16,11 @@ tklon.com
 │   ├── params.yml       --> per-deployment values
 │   └── template.yml     --> CloudFormation template
 ├── generator            --> the tklon SSG
-│   ├── src/
-│   └── assets/tags.js   --> client-side tag filter
+│   └── src/
 └── site
     ├── config.yml       --> site identity
     ├── templates/       --> Tera templates
+    ├── e2e/             --> link checks
     ├── data/            --> image + video manifests
     ├── images/          --> image masters, gitignored
     ├── videos/          --> video masters, gitignored
@@ -40,7 +40,17 @@ root lets cargo run from anywhere in the tree.
 ```sh
 cargo run -- serve      # http://localhost:4567, rebuilds on save
 cargo run -- build      # production build into build/
+cargo test              # generator unit tests
+make e2e                # build, then check internal + external links
 ```
+
+`cargo test` covers the generator, which knows nothing about this site's
+content. The tests that do — every internal link resolves to a file in the
+build, every external link is still alive, the tag filter's markup, CSS and
+script agree on the same tags — live in [`site/e2e/`](site/e2e/) and run
+against a build rather than a running generator. Only an unambiguous
+404/410 counts as a dead external link; bot walls, rate limits and timeouts
+are reported but never fail the run.
 
 To write a post, drop `site/source/posts/{year}/{slug}.md` with `title`, `date`
 and `tags` front matter. Images are native Markdown against a manifest name —
@@ -55,9 +65,11 @@ output format.
 
 Content and infrastructure deploy separately.
 
-**Content** — pushing to master runs `.github/workflows/deploy.yml`, which
-builds the site, syncs it to S3 and invalidates CloudFront. It authenticates to
-AWS via OIDC, so there are no stored keys.
+**Content** — pushing to master runs `.github/workflows/ci.yml`, which
+builds the site, runs the generator tests and the link checks, then syncs to
+S3 and invalidates CloudFront. All three must pass before the deploy runs. A
+pull request runs them and stops there. It authenticates to AWS via OIDC, so
+there are no stored keys.
 
 **Infrastructure** — applied manually with `make infra`. With the `aws-cli`
 installed and authenticated:

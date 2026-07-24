@@ -62,7 +62,9 @@ fn handle(out: &Path, url: &str) -> Response<Cursor<Vec<u8>>> {
         _ => false,
     };
 
-    let (status, bytes, ctype) = match fs::read(&fp).ok().filter(|_| contained) {
+    // `contained` gates the read itself (not just which bytes get used), so an
+    // out-of-tree path is never read into memory in the first place.
+    let (status, bytes, ctype) = match contained.then(|| fs::read(&fp)).and_then(Result::ok) {
         Some(b) => (200u16, b, content_type(&fp)),
         None => {
             let body = fs::read(out.join("404.html")).unwrap_or_else(|_| b"404 Not Found".to_vec());
@@ -70,9 +72,14 @@ fn handle(out: &Path, url: &str) -> Response<Cursor<Vec<u8>>> {
         }
     };
     let header = Header::from_bytes(&b"Content-Type"[..], ctype.as_bytes()).unwrap();
+    // no-cache (not no-store): still revalidates every time — this server has no
+    // ETag/Last-Modified, so that means refetch — but no-store also opts the page
+    // out of bfcache, which no-cache does not.
+    let no_cache = Header::from_bytes(&b"Cache-Control"[..], &b"no-cache"[..]).unwrap();
     Response::from_data(bytes)
         .with_status_code(status)
         .with_header(header)
+        .with_header(no_cache)
 }
 
 fn content_type(path: &Path) -> &'static str {

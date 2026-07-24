@@ -2,9 +2,13 @@
 {% block head %}
     {# Set <html data-tags> from the URL before first paint so the CSS filters +
        highlights with no flicker; chip clicks toggle the tag in the query and
-       re-sync the attribute — CSS does the rest. Kept as one line so the output
-       is minimal (minify-html doesn't touch <script> contents). #}
-    <script>const H=document.documentElement,S=()=>new URLSearchParams(location.search),sync=q=>H.dataset.tags=[...q.keys()].join(" ");sync(S());addEventListener("DOMContentLoaded",()=>{for(const a of document.querySelectorAll(".Tag"))a.onclick=e=>{e.preventDefault();const q=S(),t=a.dataset.tag;q.has(t)?q.delete(t):q.set(t,"");history.replaceState({},"",location.pathname+(q.toString()?"?"+q:""));sync(q)}});</script>
+       re-sync the attribute — CSS does the rest. `gate()` runs after the DOM
+       exists (unlike the pre-paint dimming, filtered-out posts being briefly
+       focusable for a moment costs nothing) to pull them from the tab order
+       and accessibility tree, and to announce the count for screen readers.
+       Kept as one line so the output is minimal (minify-html doesn't touch
+       <script> contents). #}
+    <script>const H=document.documentElement,S=()=>new URLSearchParams(location.search),sync=q=>H.dataset.tags=[...q.keys()].join(" "),gate=()=>{const t=[...S().keys()],as=[...document.querySelectorAll(".Article")];let n=0;for(const a of as){const v=!t.length||t.every(x=>a.classList.contains(x));a.inert=!v;if(v)n++}const st=document.getElementById("tagStatus");if(st)st.textContent=t.length?`Showing ${n} of ${as.length} posts`:""};sync(S());addEventListener("DOMContentLoaded",()=>{gate();for(const a of document.querySelectorAll(".Tag"))a.onclick=e=>{e.preventDefault();const q=S(),t=a.dataset.tag;q.has(t)?q.delete(t):q.set(t,"");history.replaceState({},"",location.pathname+(q.toString()?"?"+q:""));sync(q);gate()}});</script>
 {% endblock %}
 {% block content %}
     <h1 class="visually-hidden">All posts</h1>
@@ -12,11 +16,12 @@
       Filter by tag:
       {% for tag in all_tags %}<a href="/tags/?{{ tag }}" class="Tag" data-tag="{{ tag }}" style="view-transition-name: tag-{{ tag }}">{{ tag }}</a> {% endfor %}
     </p>
+    <p id="tagStatus" class="visually-hidden" aria-live="polite"></p>
 
     <ul class="Articles">
     {% for post in posts %}
       <li class="Article {{ post.tags | join(sep=' ') }}">
-        <a href="{{ post.url }}">{{ post.title | escape }}</a>
+        <a href="{{ post.url }}" style="view-transition-name: title-{{ post.permalink }}; view-transition-class: vt-title">{{ post.title | escape }}</a>
         <time class="date" datetime="{{ post.date_iso }}">{{ post.date_month }}</time>
       </li>
     {% endfor %}

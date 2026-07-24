@@ -1,0 +1,13 @@
+[package]
+name = "e2e"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Link checks for the built tklon.com site."
+
+# Deliberately does NOT depend on the `generator` crate. These tests assert
+# things about *this site* — its links — which is site knowledge the generator
+# must stay ignorant of. They run against whatever is in build/, so anything
+# that can produce those files can be tested this way.
+[dependencies]
+ureq = "3.3"
