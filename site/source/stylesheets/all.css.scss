@@ -43,17 +43,6 @@
   ::view-transition-new(root) { animation: vt-fade-in 0.3s both; }
 
   @keyframes vt-fade-in { from { opacity: 0; } }
-
-  ::view-transition-group(.vt-title) {
-    animation-duration: 0.3s;
-    animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
-  }
-  ::view-transition-old(.vt-title),
-  ::view-transition-new(.vt-title) {
-    height: 100%;
-    object-fit: contain; // scale the text rather than stretch it between sizes
-    object-position: left top;
-  }
 }
 
 html {
