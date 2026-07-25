@@ -1,7 +1,7 @@
 ---
 title: tracks
 date: 2017-03-04 17:22 UTC
-tags: film
+tags: film, books
 ---
 
 > The trip was easy. It was no more dangerous than crossing the street, or driving to the beach, or eating peanuts. The two important things that I did learn were that you are as powerful and strong as you allow yourself to be, and that the most difficult part of any endeavor is taking the first step, making the first decision. 
@@ -14,5 +14,4 @@ The photographer Rick Smolan gives a great peek at Robyn's personality.
 
 {{< embed url="https://www.youtube.com/embed/QUrSrhANJpU" title="TED talk with Rick Smolan" >}}
 
-The woman herself in this [interview](https://www.youtube.com/embed/aZ6Q5GYwKlc) with Davidson from a few years ago. 
-
+The woman herself in this [interview](https://www.youtube.com/watch?v=aZ6Q5GYwKlc) with Davidson from a few years ago.

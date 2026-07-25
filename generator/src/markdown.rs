@@ -359,7 +359,10 @@ width=\"{w}\" height=\"{h}\" poster=\"/images/{poster}-750-{pd}.webp\">\
 fn embed_html(url: &str, title: &str) -> String {
     format!(
         "<div class=\"video\"><iframe width=\"560\" height=\"315\" src=\"{url}\" \
-title=\"{t}\" allowfullscreen></iframe><a href=\"{url}\">{t}</a></div>",
+title=\"{t}\" loading=\"lazy\" \
+allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; \
+picture-in-picture; web-share\" \
+referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></div>",
         url = esc(url),
         t = esc(title),
     )
@@ -564,7 +567,7 @@ mod tests {
         .unwrap();
         assert_eq!(
             out,
-            r#"<div class="video"><iframe width="560" height="315" src="https://x.com/e" title="T" allowfullscreen></iframe><a href="https://x.com/e">T</a></div>"#
+            r#"<div class="video"><iframe width="560" height="315" src="https://x.com/e" title="T" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe></div>"#
         );
     }
 
@@ -577,7 +580,7 @@ mod tests {
         )
         .unwrap();
         assert!(out.contains("https://x.com/?a=1&amp;b=2"));
-        assert!(out.contains(">A &amp; B</a>"));
+        assert!(out.contains(r#"title="A &amp; B""#));
     }
 
     #[test]
@@ -588,7 +591,7 @@ mod tests {
             &Default::default(),
         )
         .unwrap();
-        assert!(out.contains(r#"title="" allowfullscreen"#));
+        assert!(out.contains(r#"title="" loading="lazy""#));
     }
 
     #[test]

@@ -1,6 +1,7 @@
 
 .video {
 	text-align: center;
+	margin-bottom: var(--s3);
 }
 
 .video > iframe {
@@ -8,16 +9,5 @@
 	max-width: 560px;
 	aspect-ratio: 16 / 9;
 	height: auto;
-}
-
-@media screen and (min-width: 0px) and (max-width: 560px) {
-  .video > iframe {
-		display: none;
-	}
-}
-
-@media screen and (min-width: 561px) {
-	.video > a {
-		display: none;
-	}
+	border: 0;
 }
