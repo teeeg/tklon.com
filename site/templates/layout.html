@@ -18,6 +18,22 @@
     <link rel="alternate" type="application/atom+xml" title="tklon.com" href="/feed.xml">
     <link rel="preload" href="{{ font_href }}" as="font" type="font/woff2" crossorigin>
     <link href="{{ css_href }}" rel="stylesheet">
+    <script type="speculationrules">
+    {
+      "prerender": [
+        {
+          "source": "document",
+          "where": {
+            "and": [
+              { "href_matches": "/*" },
+              { "not": { "href_matches": "/feed.xml" } }
+            ]
+          },
+          "eagerness": "moderate"
+        }
+      ]
+    }
+    </script>
     {% block head %}{% endblock %}
   </head>
 
