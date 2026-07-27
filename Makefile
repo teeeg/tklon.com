@@ -67,7 +67,7 @@ publish: ## Build the site with tklon, sync to S3 with cache headers, invalidate
 	  --cache-control 'public,max-age=60,s-maxage=300,stale-while-revalidate=86400'; \
 	echo "→ invalidating $$dist"; \
 	aws cloudfront create-invalidation --distribution-id "$$dist" \
-	  --paths '/*'
+	  --paths '/' '/index.html' '/feed.xml' '/*.html'
 
 deploy: infra publish ## Full deploy: stack update, then content
 

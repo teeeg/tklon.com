@@ -156,10 +156,8 @@ Resources:
           # shred the cache hit rate. Replaces the legacy ForwardedValues block.
           # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-cache-policies.html
           CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
-          # AWS-managed "SecurityHeadersPolicy": HSTS, X-Content-Type-Options,
-          # X-Frame-Options, X-XSS-Protection, Referrer-Policy. It sets no CSP.
-          # https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/using-managed-response-headers-policies.html
-          ResponseHeadersPolicyId: 67f7725c-6f97-4210-82d7-5512b31e9d03
+          # Custom SecurityHeadersPolicy: HSTS, CSP, Permissions-Policy, X-Content-Type-Options, Referrer-Policy
+          ResponseHeadersPolicyId: !Ref WebsiteSecurityHeadersPolicy
           TargetOriginId: !Ref WebsiteStaticAssetsBucket
           ViewerProtocolPolicy: redirect-to-https
           FunctionAssociations:
@@ -169,6 +167,30 @@ Resources:
           AcmCertificateArn: !Ref AcmCertificateArn
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1.2_2021
+
+  WebsiteSecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: !Sub "${AWS::StackName}-security-headers"
+        Comment: Custom security headers with HSTS, CSP, Permissions Policy, and Frame options
+        SecurityHeadersConfig:
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 63072000
+            IncludeSubdomains: true
+            Preload: true
+            Override: true
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; media-src 'self'; frame-src 'self' https://www.youtube.com https://x.com;"
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
 
   PathRewriteFunction:
     Type: AWS::CloudFront::Function
@@ -305,6 +327,8 @@ Resources:
       CodeUri: lambda/
       Handler: stats_report.lambda_handler
       Runtime: python3.13
+      Architectures:
+        - arm64
       Timeout: 120
       MemorySize: 256
       Environment:
