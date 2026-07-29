@@ -119,7 +119,11 @@ fn image_html(name: &str, alt: &str, caption: Option<&str>, images: &Images) -> 
     let meta = images
         .get(name)
         .ok_or_else(|| format!("unknown image '{name}' in images.json"))?;
-    let sizes = "(min-width: 750px) 750px, 100vw";
+    // The column is `min(--measure, 100vw - 2 * clamp(16px, 5vw, 40px))` wide,
+    // which works out to 90vw on a phone and a flat 685px from ~760px up.
+    // Claiming 100vw made every 1x screen pick a candidate twice the size it
+    // renders at. Keep in step with `--measure` in all.css.scss.
+    let sizes = "(min-width: 760px) 685px, 90vw";
     let digest = &meta.digest;
     let max_w = *meta.widths.iter().max().unwrap_or(&750);
     let fallback = if meta.widths.contains(&750) {
@@ -344,9 +348,12 @@ fn video_html(name: &str, caption: Option<&str>, images: &Images, videos: &Video
         .and_then(crate::media::thumbhash_to_color)
         .map(|c| format!(" style=\"background-color:{c}\""))
         .unwrap_or_default();
+    // `poster` takes a single URL — no srcset, no <source> fallback — so it gets
+    // the 750px AVIF: sharp on a 2x phone at roughly half the WebP's bytes.
+    // Browsers too old for AVIF fall back to the average-colour tint below.
     Ok(format!(
         "<figure class=\"video\"><video controls playsinline preload=\"none\"{color} \
-width=\"{w}\" height=\"{h}\" poster=\"/images/{poster}-750-{pd}.webp\">\
+width=\"{w}\" height=\"{h}\" poster=\"/images/{poster}-750-{pd}.avif\">\
 <source src=\"/media/{src}\" type=\"video/mp4\" /></video>{figcaption}</figure>",
         w = meta.width,
         h = meta.height,

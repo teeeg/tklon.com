@@ -21,7 +21,10 @@
   --accent: light-dark(#a05528, #e0a97f);
   --muted: light-dark(#66614f, #a49b85); // AA on --bg
 
-  --measure: 68ch;
+  // 68ch in Hanken Grotesk, pinned in px. As `ch` this resolves against
+  // whichever font is painting, and the fallback's wider zero made the column
+  // 84px wider until the webfont swapped in — the whole page reflowed.
+  --measure: 685px;
 
   --s1: 8px;
   --s2: 16px;

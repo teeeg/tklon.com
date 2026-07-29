@@ -20,7 +20,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{fs, io};
 
-const WIDTHS: [u32; 2] = [750, 1500];
+const WIDTHS: [u32; 3] = [375, 750, 1500];
 const AVIF_QUALITY: f32 = 50.0;
 const WEBP_QUALITY: f32 = 80.0;
 const AVIF_SPEED: u8 = 6;

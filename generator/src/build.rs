@@ -43,6 +43,9 @@ pub fn build(root: &Path, out: &Path) -> Res<()> {
     let font_href = format!("/fonts/hanken-grotesk-{}.woff2", fnv(&font_bytes));
     write_out(out, &font_href, &font_bytes)?;
 
+    // Inlined into every page rather than linked: the whole stylesheet is a few
+    // KB, and an external <link> is render-blocking, so it costs a round trip
+    // before first paint.
     let mut css = grass::from_path(
         source.join("stylesheets/all.css.scss"),
         &grass::Options::default().style(grass::OutputStyle::Compressed),
@@ -57,14 +60,11 @@ pub fn build(root: &Path, out: &Path) -> Res<()> {
             t = tag
         ));
     }
-    let css_href = format!("/stylesheets/all-{}.css", fnv(css.as_bytes()));
-    write_out(out, &css_href, css.as_bytes())?;
-
     let tera = make_tera(&site)?;
 
     let mut base = Context::new();
     base.insert("font_href", &font_href);
-    base.insert("css_href", &css_href);
+    base.insert("css", &css);
 
     // ---- posts ----
     for p in &posts {

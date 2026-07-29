@@ -80,15 +80,13 @@ fn tag_filter_contract_holds() {
     );
 
     // A tag missing from the CSS has no dimming or highlight rule, so
-    // selecting it would visibly do nothing.
-    let css: String = attr_values(&page, "href")
-        .into_iter()
-        .filter(|h| h.ends_with(".css"))
-        .map(|h| {
-            std::fs::read_to_string(build_dir().join(h.trim_start_matches('/')))
-                .expect("stylesheet linked from /tags/ is missing from the build")
-        })
-        .collect();
+    // selecting it would visibly do nothing. The stylesheet is inlined, so it
+    // is read straight out of the page.
+    let css = page
+        .split_once("<style>")
+        .and_then(|(_, rest)| rest.split_once("</style>"))
+        .map(|(css, _)| css)
+        .expect("no inline <style> on /tags/");
     let css_tags: BTreeSet<String> = css
         .split("data-tags~=\"")
         .skip(1)
