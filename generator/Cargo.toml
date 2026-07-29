@@ -21,7 +21,7 @@ minify-html = "0.15"
 
 # media authoring (tklon images) — pure-Rust encoders, no system libvips
 image = "0.25"
-ravif = "0.11"
+ravif = "0.13"
 rgb = "0.8"
 imgref = "1"
 webp = "0.3"
